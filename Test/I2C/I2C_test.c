@@ -1,5 +1,6 @@
 // ref : https://raspberry-projects.com/pi/programming-in-c/i2c/using-the-i2c-interface
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -9,12 +10,13 @@ int file_i2c = 0;
 int length;
 unsigned char buffer[60] = {0};
 
-int main()
+void main()
 {
     /*----- OPEN THE I2C BUS ----*/
     char *filename = (char*)"/dev/i2c-1";
     if (( file_i2c = open(filename,O_RDWR)) < 0){
-        printf("Failed to open the i2c bus");
+        printf("fail code : %d\n",file_i2c);
+        printf("Failed to open the i2c bus\n");
         return;
     }
 
