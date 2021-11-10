@@ -19,17 +19,15 @@
 namespace LRA_DRV2605L{
     using namespace LRA_PI_Util;
     using namespace LRA_Error;
-    
-    /*I2C related*/
-    #define I2C_DEFAULT_TARGET "/dev/i2c-1"
-    
-    /*Address*/
+     
+    /*Slave id (i2c address)*/
     typedef enum{
-        ADDR_DEFAULT = 0x5a,
-        ADDR_X       = 0x71,
-        ADDR_Y       = 0x72,
-        ADDR_Z       = 0x73,
-    }ADDR;
+        SLAVE_DEFAULT_ID = 0x5a,
+        /*after get tca9548a will use these slave id*/
+        SLAVE_X_ID       = 0x71,
+        SLAVE_Y_ID       = 0x72,
+        SLAVE_Z_ID       = 0x73,
+    }SLAVE_ID;
 
     /*Register*/
     typedef enum{
@@ -67,20 +65,77 @@ namespace LRA_DRV2605L{
 
         //LRA related
         REG_LRAOpenLoopPeriod                   = 0x20,
-        REG_LRAResonancePeriod                  = 0x21,
+        REG_VbatVoltageMonitor                  = 0x21,
+        REG_LRAResonancePeriod                  = 0x22,
+        REG_MAX                                 = REG_LRAResonancePeriod,
+
     }REGISTER;
 
+    uint8_t Default_Value[REG_MAX+1] = {
+        0xe0, 0x40, 0x0,  0x1,  0x1,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0, 
+        0x0,  0x05, 0x19, 0xff, 0x19, 0xff, 0x3e, 0x8c, 0x0c, 0x6c, 0x36, 0x93, 0xf5, 0xa0, 0x20, 0x80,
+        0x33, 0xbf, 0xec
+    };
 
+    uint8_t LRA_Setting[REG_MAX+1] = {
+        /**
+         * 0x00 :
+         * 0x01 :
+         * 0x02 :
+         * 0x03 :
+         * 0x04 :
+         * 0x05 :
+         * 0x06 :
+         * 0x07 :
+         * 0x08 :
+         * 0x09 :
+         * 0x0A :
+         * 0x0B :
+         * 0x0C :
+         * 0x0D :
+         * 0x0E :
+         * 0x0F :
+         * 0x10 :
+         * 0x11 :
+         * 0x12 :
+         * 0x13 :
+         * 0x14 :
+         * 0x15 :
+         * 0x16 :
+         * 0x17 :
+         * 0x18 :
+         * 0x19 :
+         * 0x1A :
+         * 0x1B :
+         * 0x1C :
+         * 0x1D :
+         * 0x1E :
+         * 0x1F :
+         * 0x20 :
+         * 0x21 :
+         * 0x22 :
+         */
+        0xe0, 0x40, 0x0,  0x1,  0x1,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0, 
+        0x0,  0x05, 0x19, 0xff, 0x19, 0xff, 0x3e, 0x8c, 0x0c, 0x6c, 0x36, 0x93, 0xf5, 0xa0, 0x20, 0x80,
+        0x33, 0xbf, 0xec
+    };
 
     /*class*/
     class DRV2605L{
         public:
+            DRV2605L();
+            DRV2605L(int slave_id = SLAVE_DEFAULT_ID);
+            ~DRV2605L();
+
             int slave_id;
             uint16_t errCode;
-            uint16_t read(int slave_id, int reg_addr);
-            uint8_t write(int slave_id, int reg_addr);
+
+            void init();
+            uint8_t read(int reg_addr);
+            uint8_t write(int reg_addr, uint8_t content);
            
         protected:
+            /*return value PI_I2C 's func pointer i2c  v.s. create a var 's type is PI_I2C*/
             PI_I2C i2c;
             Data data;
 
