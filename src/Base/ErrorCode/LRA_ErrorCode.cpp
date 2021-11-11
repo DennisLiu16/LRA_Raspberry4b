@@ -1,4 +1,4 @@
-#include <inc/LRA_ErrorCode.h>
+#include <inc/ErrorCode/LRA_ErrorCode.h>
 
 namespace LRA_Error{
 

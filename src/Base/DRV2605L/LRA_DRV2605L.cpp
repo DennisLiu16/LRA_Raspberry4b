@@ -1,4 +1,4 @@
-#include <inc/LRA_DRV2605L.h>
+#include <inc/DRV2605L/LRA_DRV2605L.h>
 using namespace LRA_DRV2605L;
 
 DRV2605L::DRV2605L(){
