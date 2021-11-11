@@ -38,7 +38,7 @@ uint8_t DRV2605L::read(int reg_addr){
     try{
         if( (reg_addr | REG_MAX - reg_addr) < 0){
             /*out of range*/
-            cout << "The error addr is " << reg_addr <<endl;
+            cout << "Out of range. The error addr is " << reg_addr <<endl;
             throw ERR_DRV2605L_REGISTER_ADDRESS_DISMATCH;
         }
         /*send read request*/

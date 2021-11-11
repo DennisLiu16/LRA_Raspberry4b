@@ -16,7 +16,9 @@
     namespace LRA_PI_Util{
         using namespace LRA_Error;
         using namespace std;
-        const char* I2C_DEFAULT_DEVICE = "/dev/i2c-1";
+
+        #define I2C_DEFAULT_DEVICE "/dev/i2c-1"
+        
 
         class Data{
             public:
@@ -56,7 +58,7 @@
 
                 
 
-                int* i2c_init(const char* dev_id = I2C_DEFAULT_DEVICE) noexcept;
+                int* i2c_init(char* dev_id = (char*)I2C_DEFAULT_DEVICE) noexcept;
                 /**
                  * @param   :   (char*) ,i2c_dev_id default as "/dev/i2c-1"
                  * @return  :   (int)   ,i2c_interface, read/write through this port
