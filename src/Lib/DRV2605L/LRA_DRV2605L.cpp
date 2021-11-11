@@ -1,11 +1,11 @@
-#include <inc/DRV2605L/LRA_DRV2605L.h>
+#include <DRV2605L/LRA_DRV2605L.h>
 using namespace LRA_DRV2605L;
 
 DRV2605L::DRV2605L(){
 
 }
 
-DRV2605L::DRV2605L(int slave_id = SLAVE_DEFAULT_ID){
+DRV2605L::DRV2605L(int slave_id /*=SLAVE_DEFAULT_ID*/){
 
     this->slave_id = slave_id;
     /*class constructor*/

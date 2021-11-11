@@ -11,7 +11,7 @@
 #include <linux/i2c-dev.h>
 #include <stdint.h>
 
-#include <inc/ErrorCode/LRA_ErrorCode.h>
+#include <ErrorCode/LRA_ErrorCode.h>
 
     namespace LRA_PI_Util{
         using namespace LRA_Error;

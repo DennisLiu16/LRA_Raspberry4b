@@ -1,4 +1,4 @@
-#include <inc/PI/LRA_PI_Util.h>
+#include <PI/LRA_PI_Util.h>
 
 
 using namespace LRA_PI_Util;
@@ -36,7 +36,7 @@ PI_I2C::~PI_I2C(){
     
 };
 
-int* PI_I2C::i2c_init(const char* dev_id = I2C_DEFAULT_DEVICE) noexcept{
+int* PI_I2C::i2c_init(const char* dev_id /*= I2C_DEFAULT_DEVICE*/) noexcept{
     try{
         static int* tmp_port;
         if( (*tmp_port = open(dev_id,O_RDWR)) < 0)
