@@ -1,0 +1,16 @@
+# The first target makefile of LRA project
+
+cmake_minimum_required(VERSION 3.12)
+project(LRA)
+
+echo ${CMAKE_CURRENT_SOURCE_DIR}
+
+# recursive src/drv2605L/setting cpp
+#file(GLOB_RECURSE DRIVER_SETTING ${CMAKE_CURRENT_SOURCE_DIR}/src/drv2605L/setting/*.cpp)
+
+# find_package(LRA_DRV2605L LRA_ErrorCode LRA_PI_Util REQUIRED)
+
+# add_executable(LRA_Driver_Init)
+# target_sources(LRA_Driver_Init PRIVATE "LRA_DRV2605L_Init.cpp")
+# target_link_libraries(LRA_Driver_Init PRIVATE )
+# target_compile_definitions(LRA_Driver_Init std_cxx_17)
