@@ -22,9 +22,12 @@ void DRV2605L::init(){
       ioctl done in i2c_init()
     */
     try{
-        if( (i2c.i2c_port = i2c.i2c_init()) == nullptr)
+        
+        if( (i2c.i2c_port = i2c.i2c_init()) == nullptr){
+            /*port null*/
             cout << "Err:i2c port" << endl;
             throw ERR_DRV2605L_NULLPTR;
+        }
         
     }
     catch(ErrorType e){

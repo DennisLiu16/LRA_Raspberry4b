@@ -38,13 +38,13 @@ PI_I2C::~PI_I2C(){
 
 int* PI_I2C::i2c_init(char* dev_id /*= I2C_DEFAULT_DEVICE*/) noexcept{
     try{
-        static int* tmp_port;
-        if( (*tmp_port = open(dev_id,O_RDWR)) < 0)
+        static int* tmp_port = nullptr;
+        static int temp;
+        if( (temp = open(dev_id,O_RDWR)) < 0)
             throw ERR_PI_I2C_CONNECTION_FAILURE;
-        if( ioctl(*tmp_port,I2C_SLAVE,this->slave_id) < 0)
+        if( ioctl(temp,I2C_SLAVE,this->slave_id) < 0)
             throw ERR_PI_I2C_IOCTL_PERMISSION_DENYIED;
-        printf("tmp port: %d\n",*tmp_port);
-        return tmp_port;
+        return &temp;
     }
     catch(ErrorType e){
         /*send error to err*/
@@ -59,8 +59,9 @@ uint8_t PI_I2C::i2c_read(int* port,int reg_addr){
     
     try{
         /*set as 1 byte and buffer*/
-        uint8_t c[60] = {0};
-        int length = 2;
+        int ret = ioctl(*port,I2C_SLAVE,this->slave_id);
+        uint8_t c[1] = {0};
+        int length = 1;
         if( port == nullptr ){
             /*port not valid*/
             throw ERR_PI_I2C_NULLPTR;

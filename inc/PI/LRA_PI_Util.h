@@ -52,7 +52,7 @@
                 ~PI_I2C();
 
                 int slave_id;
-                int* i2c_port;           // file_i2c, the channel
+                int* i2c_port = nullptr;           // file_i2c, the channel
                 uint16_t err;
                 Data data;
 
