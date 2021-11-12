@@ -13,6 +13,7 @@
 
 #ifndef _LRA_DRV2605L_H_
 #define _LRA_DRV2605L_H_
+#include <I2c/i2c.h>
 #include <ErrorCode/LRA_ErrorCode.h>
 #include <PI/LRA_PI_Util.h>
 
