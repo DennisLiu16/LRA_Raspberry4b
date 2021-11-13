@@ -74,8 +74,14 @@ void i2c_close(int bus)
 **	@brief		:	Initialize I2CDevice with defualt value
 **	#device	    :	I2CDevice struct
 */
-void i2c_init_device(I2CDevice *device)
+void i2c_init_device(I2CDevice *device,int port,int slave_id)
 {
+    /* port assign */
+    device->bus = port;
+
+    /* slave_id assign*/
+    device->addr = slave_id;
+
     /* 7 bit device address */
     device->tenbit = 0;
 
@@ -83,7 +89,7 @@ void i2c_init_device(I2CDevice *device)
     device->delay = 1;
 
     /* 8 bytes per page */
-    device->page_bytes = 8;
+    device->page_bytes = 16;
 
     /* 1 byte internal(word) address */
     device->iaddr_bytes = 1;

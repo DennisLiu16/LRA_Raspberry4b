@@ -128,16 +128,52 @@ namespace LRA_DRV2605L{
             DRV2605L(int slave_id = SLAVE_DEFAULT_ID);
             ~DRV2605L();
 
+            bool is_init = 0;
             int slave_id;
             uint16_t errCode;
 
+            /**
+             * @brief 
+             * 
+             */
             void init();
+
+            /**
+             * @brief 
+             * 
+             * @param reg_addr 
+             * @param buf 
+             * @param len 
+             * @return ssize_t 
+             */
+            ssize_t read(int reg_addr,void *buf,size_t len);
+
+             /**
+             * @brief read function based on i2c library(single addr start, mutiple buf read)
+             * 
+             * @param reg_addr 
+             * @return ssize_t 
+             */
             uint8_t read(int reg_addr);
-            uint8_t write(int reg_addr, uint8_t content);
-           
+
+            /**
+             * @brief 
+             * 
+             * @return ssize_t 
+             */
+            uint8_t* read_all();
+
+            /**
+             * @brief 
+             * 
+             * @param reg_addr 
+             * @return ssize_t 
+             */
+            uint8_t write(int reg_addr, I2CDevice content);
+
         protected:
             /*return value PI_I2C 's func pointer i2c  v.s. create a var 's type is PI_I2C*/
-            PI_I2C i2c;
+            I2CDevice i2c;
             Data data;
 
         private:

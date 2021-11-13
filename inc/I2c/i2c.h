@@ -18,6 +18,8 @@ typedef struct i2c_device {
     unsigned short flags;		/* I2C i2c_ioctl_read/write flags */
     unsigned int page_bytes;    /* I2C max number of bytes per page, 1K/2K 8, 4K/8K/16K 16, 32K/64K 32 etc */
     unsigned int iaddr_bytes;   /* I2C device internal(word) address bytes, such as: 24C04 1 byte, 24C64 2 bytes */
+    /*add buffer*/
+
 } I2CDevice;
 
 /* Close i2c bus */
@@ -27,7 +29,7 @@ void i2c_close(int bus);
 int i2c_open(const char *bus_name);
 
 /* Initialize I2CDevice with default value */
-void i2c_init_device(I2CDevice *device);
+void i2c_init_device(I2CDevice *device,int port, int slave_id);
 
 /* Get i2c device description */
 char *i2c_get_device_desc(const I2CDevice *device, char *buf, size_t size);
