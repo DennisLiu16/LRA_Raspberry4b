@@ -1,5 +1,7 @@
 #ifndef _LRA_PI_UTIL_H_
 #define _LRA_PI_UTIL_H_
+/*essential define or ompile will error*/
+#define FMT_HEADER_ONLY
 
 // sys include - c++
 #include <iostream>
@@ -10,11 +12,15 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <stdint.h>
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 
 #include <ErrorCode/LRA_ErrorCode.h>
 
     namespace LRA_PI_Util{
         using namespace LRA_Error;
+        using namespace fmt;
         using namespace std;
 
         #define I2C_DEFAULT_DEVICE "/dev/i2c-1"

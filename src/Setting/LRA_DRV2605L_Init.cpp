@@ -48,7 +48,8 @@ int main(){
     DRV2605L x_drv(SLAVE_DEFAULT_ID);
     x_drv.init();
 
-    uint8_t test;
-    test = x_drv.read(0x00);
-    printf("%x\n",test);
+    // uint8_t test;
+    // test = x_drv.read(0x00);
+    // printf("%x\n",test);
+    x_drv.print_all_register();
 }

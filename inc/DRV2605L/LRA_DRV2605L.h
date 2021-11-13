@@ -69,6 +69,7 @@ namespace LRA_DRV2605L{
         REG_VbatVoltageMonitor                  = 0x21,
         REG_LRAResonancePeriod                  = 0x22,
         REG_MAX                                 = REG_LRAResonancePeriod,
+        REG_NUM                                 = REG_MAX+1
 
     }REGISTER;
 
@@ -159,9 +160,8 @@ namespace LRA_DRV2605L{
             /**
              * @brief 
              * 
-             * @return ssize_t 
              */
-            uint8_t* read_all();
+            void print_all_register();
 
             /**
              * @brief 
