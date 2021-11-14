@@ -23,6 +23,11 @@ int main(){
         //     print("{:x}\n",*(result+i));
         // }
     /*write singletest*/
-        x_drv.write(0x03,0x06);
-        x_drv.print_all_register();
+        // x_drv.write(0x03,0x06);
+        // x_drv.print_all_register();
+    /*write mutiple byte*/
+        // const uint8_t test[2] = {0x01,0x01};
+        // const uint8_t* a = test;
+        // int ret = x_drv.write(0x03,a,2);
+        // x_drv.print_all_register();
     }

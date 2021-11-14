@@ -104,11 +104,6 @@ uint8_t DRV2605L::read(uint32_t reg_addr)
 }
 
 ssize_t DRV2605L::write(uint32_t reg_addr,const void* content, size_t len){
-
-}
-
-ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
-{
     try{
         /*equal to reg_addr>=1 && reg_addr <= REG_MAX*/
         if( ((reg_addr-1) | (REG_MAX - reg_addr)) < 0){
@@ -118,13 +113,19 @@ ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
         }
 
         /*send write request*/
-        const uint8_t* c = &content;
-        return i2c_write(&i2c,reg_addr,c,1);
+        return i2c_write(&i2c,reg_addr,content,len);
     }
     catch(ErrorType e){
         errCode = e;
         format("{}\n",Error::getErrorName(e));
         return -1;
     }
-    
 }
+
+ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
+{
+    const uint8_t*c = &content;
+    return write(reg_addr,c,1);
+}
+
+// ioctl and print function -> setting functions
