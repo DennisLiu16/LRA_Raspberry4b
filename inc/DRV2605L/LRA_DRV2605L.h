@@ -69,17 +69,19 @@ namespace LRA_DRV2605L{
         REG_VbatVoltageMonitor                  = 0x21,
         REG_LRAResonancePeriod                  = 0x22,
         REG_MAX                                 = REG_LRAResonancePeriod,
-        REG_NUM                                 = REG_MAX+1
+        REG_NUM                                 = REG_MAX+1,
+
+        // Setting binary code
 
     }REGISTER;
 
-    uint8_t Default_Value[REG_MAX+1] = {
+    uint8_t Default_Value[REG_NUM] = {
         0xe0, 0x40, 0x0,  0x1,  0x1,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0, 
         0x0,  0x05, 0x19, 0xff, 0x19, 0xff, 0x3e, 0x8c, 0x0c, 0x6c, 0x36, 0x93, 0xf5, 0xa0, 0x20, 0x80,
-        0x33, 0xbf, 0xec
+        0x33, 0x0 , 0x0
     };
 
-    uint8_t LRA_Setting[REG_MAX+1] = {
+    uint8_t LRA_Setting[REG_NUM] = {
         /**
          * 0x00 :
          * 0x01 :
@@ -119,7 +121,7 @@ namespace LRA_DRV2605L{
          */
         0xe0, 0x40, 0x0,  0x1,  0x1,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0, 
         0x0,  0x05, 0x19, 0xff, 0x19, 0xff, 0x3e, 0x8c, 0x0c, 0x6c, 0x36, 0x93, 0xf5, 0xa0, 0x20, 0x80,
-        0x33, 0xbf, 0xec
+        0x33, 0x0 , 0x0
     };
 
     /*class*/
@@ -147,7 +149,7 @@ namespace LRA_DRV2605L{
              * @param len 
              * @return ssize_t 
              */
-            ssize_t read(int reg_addr,void *buf,size_t len);
+            ssize_t read(uint32_t reg_addr,void *buf,size_t len);
 
              /**
              * @brief read function based on i2c library(single addr start, mutiple buf read)
@@ -155,7 +157,7 @@ namespace LRA_DRV2605L{
              * @param reg_addr 
              * @return ssize_t 
              */
-            uint8_t read(int reg_addr);
+            uint8_t read(uint32_t reg_addr);
 
             /**
              * @brief 
@@ -169,7 +171,9 @@ namespace LRA_DRV2605L{
              * @param reg_addr 
              * @return ssize_t 
              */
-            uint8_t write(int reg_addr, I2CDevice content);
+            ssize_t write(uint32_t reg_addr, const void* content,size_t len);
+
+            ssize_t write(uint32_t reg_addr, uint8_t content);
 
         protected:
             /*return value PI_I2C 's func pointer i2c  v.s. create a var 's type is PI_I2C*/

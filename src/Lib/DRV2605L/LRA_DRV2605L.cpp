@@ -39,7 +39,7 @@ void DRV2605L::init(){
     }
 }
 
-ssize_t DRV2605L::read(int reg_addr,void *buf,size_t len){
+ssize_t DRV2605L::read(uint32_t reg_addr,void *buf,size_t len){
     /*addr range check*/
     try{
         /*equal to reg_addr>0 && reg_addr <= REG_MAX*/
@@ -55,7 +55,7 @@ ssize_t DRV2605L::read(int reg_addr,void *buf,size_t len){
     catch(ErrorType e){
         errCode = e;
         format("{}\n",Error::getErrorName(e));
-        return 0;
+        return -1;
     }
 }
 
@@ -70,7 +70,8 @@ void DRV2605L::print_all_register()
     /*show in terminal*/
     int col_width = 20;
     /*print column's names , 15 char per column, fmt key - seperated*/
-    print("{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6:>{5}}\n",
+    print(emphasis::bold | fg(color::yellow),
+        "{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6:>{5}}\n",
         "Register_Addr",
         "Hex_Value",
         "Default_Hex",
@@ -81,19 +82,20 @@ void DRV2605L::print_all_register()
 
     for(uint8_t i = 0; i < REG_NUM; i++)
     {
-        print( "{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6:>{5}}\n",
+        print( "{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6}\n",
         format("{:#04x}",i),
-        format("{:#04x}",all[i]),
-        format("{:#04x}",Default_Value[i]),
+        format("{:02x}",all[i]),
+        format("{:02x}",Default_Value[i]),
         format("{:08b}",all[i]),
         format("{:08b}",Default_Value[i]),
         col_width,
-        isSame(all[i],Default_Value[i]));
+        format(emphasis::bold | fg(color::yellow),"{0:>{1}}",isSame(all[i],Default_Value[i]), col_width)
+        );
     }
     return;
 }
 
-uint8_t DRV2605L::read(int reg_addr)
+uint8_t DRV2605L::read(uint32_t reg_addr)
 {
     //bug need to assign a memory address to pointer alway, e.g. new uint8_t()
     uint8_t c = 0;
@@ -101,7 +103,28 @@ uint8_t DRV2605L::read(int reg_addr)
     return c;
 }
 
-uint8_t DRV2605L::write(int reg_addr,I2CDevice content){
+ssize_t DRV2605L::write(uint32_t reg_addr,const void* content, size_t len){
 
 }
-// rewrite read, print_all_register, write, ioctl read, ioctl write
+
+ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
+{
+    try{
+        /*equal to reg_addr>=1 && reg_addr <= REG_MAX*/
+        if( ((reg_addr-1) | (REG_MAX - reg_addr)) < 0){
+            /*out of range*/
+            format("Out of range. The error reg_addr is {:#04x}",reg_addr);
+            throw ERR_DRV2605L_REGISTER_ADDRESS_DISMATCH;
+        }
+
+        /*send write request*/
+        const uint8_t* c = &content;
+        return i2c_write(&i2c,reg_addr,c,1);
+    }
+    catch(ErrorType e){
+        errCode = e;
+        format("{}\n",Error::getErrorName(e));
+        return -1;
+    }
+    
+}

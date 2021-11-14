@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
-
+#include <fmt/color.h>
 
 #include <ErrorCode/LRA_ErrorCode.h>
 
