@@ -128,4 +128,82 @@ ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
     return write(reg_addr,c,1);
 }
 
-// ioctl and print function -> setting functions
+ssize_t DRV2605L::set_LRA_6s()
+{
+    /**/
+}
+
+void DRV2605L::set_soft_reset()
+{
+    /*Write all by Default_Value*/
+
+}       
+
+void DRV2605L::set_hard_reset()
+{
+    /*Write 0x01 with 0x80*/
+}       
+
+void DRV2605L::set_go()
+{
+    /*Set go bit*/
+}
+
+void DRV2605L::set_autoCalibration()
+{
+    /*Set auto calibration related registers*/
+}
+
+void DRV2605L::unset_go()
+{
+    /*Cancel go bit*/
+}          
+
+/*Get function*/
+uint8_t DRV2605L::get_ACCR()
+{
+    /*Get Auto-Calibration Compensation Result*/
+}          
+uint8_t DRV2605L::get_ACBR()
+{
+    /*Get Auto-Calibration Back-EMF Result*/
+}          
+uint8_t DRV2605L::get_VVM()
+{
+    /*Get Vbat Voltage Monitor*/
+}           
+
+/*------------------------------------------Protected-----------------------------------------------*/
+
+void DRV2605L::set_MODE(uint8_t content)
+{
+    /*Mode*/
+    uint8_t tmp = read(REG_Mode);
+    write(REG_Mode,content | tmp);
+}      
+void DRV2605L::set_RTP(uint8_t content)
+{
+    /*Real-Time Playback Input*/
+    write(REG_RealTimePlaybackInput,content);
+}
+void DRV2605L::set_LS(uint8_t content);        /*Library Selection*/
+void DRV2605L::set_WS(uint8_t num,uint8_t content);/*Waveform Sequencer*/
+void DRV2605L::set_ODT(uint8_t content);       /*Overdrive Time Offset*/
+void DRV2605L::set_SPT(uint8_t content);       /*Sustain Time Positive Offset*/
+void DRV2605L::set_SNT(uint8_t content);       /*Sustain Time Negative Offset*/
+void DRV2605L::set_BRT(uint8_t content);       /*Brake Time*/
+void DRV2605L::set_A2VC(uint8_t content);      /*Audio-to-Vibe Control*/
+void DRV2605L::set_A2VMinIL(uint8_t content);  /*Audio-to-Vibe Minimum Input Level*/
+void DRV2605L::set_A2VMaxIL(uint8_t content);  /*Audio-to-Vibe Maximum Input Level*/ 
+void DRV2605L::set_A2VMinOD(uint8_t content);  /*Audio-to-Vibe Minimum Output Drive*/
+void DRV2605L::set_A2VMaxOD(uint8_t content);  /*Audio-to-Vibe Maximum Output Drive*/ 
+void DRV2605L::set_RV(uint8_t content);        /*Rated Voltage -> use in auto calibration*/
+void DRV2605L::set_ODC(uint8_t content);       /*Overdrive Clamp Voltage*/
+void DRV2605L::set_FC(uint8_t content);        /*Feedback Control*/
+void DRV2605L::set_C1(uint8_t content);        /*Control 1*/
+void DRV2605L::set_C2(uint8_t content);        /*Control 2*/
+void DRV2605L::set_C3(uint8_t content);        /*Control 3*/
+void DRV2605L::set_C4(uint8_t content);        /*Control 4*/
+void DRV2605L::set_C5(uint8_t content);        /*Control 5*/
+void DRV2605L::set_LRAOLP(uint8_t content);    /*LRA open loop period*/
+void DRV2605L::set_LRARP(uint8_t content);     /*LRA resonance period*/
