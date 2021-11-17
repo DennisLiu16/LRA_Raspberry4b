@@ -30,4 +30,7 @@ int main(){
         // const uint8_t* a = test;
         // int ret = x_drv.write(0x03,a,2);
         // x_drv.print_all_register();
+
+    /*try setting use set_LRA_6s()*/
+        x_drv.set_LRA_6s();
     }

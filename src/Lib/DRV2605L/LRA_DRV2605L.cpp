@@ -39,6 +39,88 @@ void DRV2605L::init(){
     }
 }
 
+void DRV2605L::set_LRA_6s()
+{
+    /*--seperate this later--*/
+        //set_must(type)+set_custom()
+    /*An example for how to set DRV2605L appropriately*/
+    /*What you must setm if you don't know what value should it be, just set default*/
+    /*Search should tune to find what you may need to adjust*/
+    set_MODE(
+        MODE_DEV_RESET_default |
+        MODE_MODE_internal_trigger |        /*if you use pwm/analog -> C3*/
+        MODE_STANDBY_default  
+    );
+    set_LS(LS_HI_Z_default | LS_LIBRARY_SEL_lra);
+
+    /*set Waveform sequencers empty*/
+    for(uint8_t i = 0;i < WS_NUM;i++)
+        set_WS(i,WS_WAIT_default | WS_WAV_FRM_SEQ_default);
+
+    set_GO(GO_GO_stop);
+    set_RV(RV_RATED_VOLTAGE_default);   /*should tune*/
+    set_ODC(ODC_OD_CLAMP_default);      /*max voltage output*/  /*should tune*/
+    set_FC(                             /*must set this before autocalibration*/ /*should tune*/
+        FC_N_ERM_LRA_lra | 
+        FC_FB_BRAKE_FACTOR_default |
+        FC_LOOP_GAIN_default | 
+        FC_BEMF_GAIN_default
+    );
+    set_C1(
+        C1_STARTUP_BOOST_on |
+        C1_AC_COUPLE_off |              /*this bit on only in analog input mode*/
+        C1_DRIVE_TIME_default           /*should tune*/
+    );
+    set_C2(
+        C2_BIDIR_INPUT_default |
+        C2_BRAKE_STABILIZER_default |
+        C2_SAMPLE_TIME_default |        /*should tune*/
+        C2_BLANKING_TIME_lra_default |  /*should tune*/
+        C2_IDISS_TIME_lra_default       /*should tune*/
+    );
+    set_C3(
+        C3_DATA_FORMAT_RTP_default |    /*use in pwm or analog*/ /*should tune*/
+        C3_ERM_OPEN_LOOP_default |      /*ERM use*/
+        C3_SUPPLY_COMP_DIS_enabled |    /*default enabled,if you have done this by yourself, turn off*/
+        C3_DATA_FORMAT_RTP_default |    /*use in RTP mode*/
+        C3_LRA_DRIVE_MODE_default |     /*LRA use, default once per cycle*/
+        C3_N_PWM_ANALOG_default |       /*must set this bit if you use pwm/analog*/
+        C3_LRA_OPEN_LOOP_default        /*auto closed loop*/
+    );
+    set_C4(
+        C4_ZC_DET_TIME_default |
+        C4_AUTO_CAL_TIME_default       /*should tune*/
+    );
+    set_C5(
+        C5_AUTO_OL_CNT_default |
+        C5_LRA_AUTO_OPEN_LOOP_never | 
+        C5_PLAYBACK_INTERVAL_default |
+        C5_BLANKING_TIME_lra_default |  /*LRA should tune*/
+        C5_IDISS_TIME_lra_default       /*LRA should tune*/
+    );
+    
+
+    /*Optional*/
+    set_RTP(RTP_RTP_INPUT_default); /*set this if you use RTP mode*/
+    set_ODT(ODT_ODT_default);
+    set_SPT(SPT_SPT_default);
+    set_SNT(SNT_SNT_default);
+    set_BRT(BRT_BRT_default);
+
+    set_A2VC(A2VC_ATH_FILTER_default | A2VC_ATH_PEAK_TIME_default); /*set these if you use Audio Vibe mode*/
+    set_A2VMaxIL(A2VMaxIL_ATH_MAX_INPUT_default);
+    set_A2VMinIL(A2VMinIL_ATH_MIN_INPUT_default);
+    set_A2VMaxOD(A2VMaxOD_ATH_MAX_DRIVE_default);
+    set_A2VMinOD(A2VMinOD_ATH_MIN_DRIVE_default);
+
+    set_ACCR(ACCR_A_CAL_COMP_default);  /*set this or not is ok, but if you don't set, plz use autocalibration mode to update these value first*/
+    set_ACBR(ACBR_A_CAL_BEM_default);   /*same*/
+    set_VVM(VVM_VBAT_default);
+    set_LRARP(LRARP_LRA_PERIOD_default);
+
+    set_LRAOLP(LRAOLP_OL_LRA_PERIOD_default);/*set this if you enable LRA open loop*/
+}
+
 ssize_t DRV2605L::read(uint32_t reg_addr,void *buf,size_t len){
     /*addr range check*/
     try{
@@ -128,82 +210,210 @@ ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
     return write(reg_addr,c,1);
 }
 
-ssize_t DRV2605L::set_LRA_6s()
-{
-    /**/
-}
-
-void DRV2605L::set_soft_reset()
+void DRV2605L::soft_reset()
 {
     /*Write all by Default_Value*/
-
 }       
 
-void DRV2605L::set_hard_reset()
+void DRV2605L::hard_reset()
 {
     /*Write 0x01 with 0x80*/
+    write(REG_Mode,MODE_DEV_RESET_reset);
 }       
 
-void DRV2605L::set_go()
+void DRV2605L::run()
 {
-    /*Set go bit*/
+    /*Set go bit,not valid for EN activate?*/
+    set(REG_Mode,MODE_STANDBY_ready);
+    set(REG_Go,GO_GO_go);
 }
+
+void DRV2605L::stop()
+{
+    /*Cancel go bit, not valid for EN activate?*/
+    set(REG_Go,GO_GO_stop);
+    set(REG_Mode,MODE_STANDBY_standby);
+}   
 
 void DRV2605L::set_autoCalibration()
 {
     /*Set auto calibration related registers*/
+    
 }
-
-void DRV2605L::unset_go()
-{
-    /*Cancel go bit*/
-}          
 
 /*Get function*/
 uint8_t DRV2605L::get_ACCR()
 {
     /*Get Auto-Calibration Compensation Result*/
+    return read(REG_AutoCalibrationCompensationResult);
 }          
 uint8_t DRV2605L::get_ACBR()
 {
     /*Get Auto-Calibration Back-EMF Result*/
+    return read(REG_AutoCalibrationBackEMFResult);
+
 }          
 uint8_t DRV2605L::get_VVM()
 {
     /*Get Vbat Voltage Monitor*/
+    return read(REG_VbatVoltageMonitor);
 }           
+uint8_t DRV2605L::get_LRARP()
+{
+    /*Get LRA Resonance Period*/
+    return read(REG_LRAResonancePeriod);
+}
 
 /*------------------------------------------Protected-----------------------------------------------*/
 
 void DRV2605L::set_MODE(uint8_t content)
 {
     /*Mode*/
-    uint8_t tmp = read(REG_Mode);
-    write(REG_Mode,content | tmp);
-}      
+    set(REG_Mode,content);
+} 
 void DRV2605L::set_RTP(uint8_t content)
 {
     /*Real-Time Playback Input*/
-    write(REG_RealTimePlaybackInput,content);
+    set(REG_RealTimePlaybackInput,content);
 }
-void DRV2605L::set_LS(uint8_t content);        /*Library Selection*/
-void DRV2605L::set_WS(uint8_t num,uint8_t content);/*Waveform Sequencer*/
-void DRV2605L::set_ODT(uint8_t content);       /*Overdrive Time Offset*/
-void DRV2605L::set_SPT(uint8_t content);       /*Sustain Time Positive Offset*/
-void DRV2605L::set_SNT(uint8_t content);       /*Sustain Time Negative Offset*/
-void DRV2605L::set_BRT(uint8_t content);       /*Brake Time*/
-void DRV2605L::set_A2VC(uint8_t content);      /*Audio-to-Vibe Control*/
-void DRV2605L::set_A2VMinIL(uint8_t content);  /*Audio-to-Vibe Minimum Input Level*/
-void DRV2605L::set_A2VMaxIL(uint8_t content);  /*Audio-to-Vibe Maximum Input Level*/ 
-void DRV2605L::set_A2VMinOD(uint8_t content);  /*Audio-to-Vibe Minimum Output Drive*/
-void DRV2605L::set_A2VMaxOD(uint8_t content);  /*Audio-to-Vibe Maximum Output Drive*/ 
-void DRV2605L::set_RV(uint8_t content);        /*Rated Voltage -> use in auto calibration*/
-void DRV2605L::set_ODC(uint8_t content);       /*Overdrive Clamp Voltage*/
-void DRV2605L::set_FC(uint8_t content);        /*Feedback Control*/
-void DRV2605L::set_C1(uint8_t content);        /*Control 1*/
-void DRV2605L::set_C2(uint8_t content);        /*Control 2*/
-void DRV2605L::set_C3(uint8_t content);        /*Control 3*/
-void DRV2605L::set_C4(uint8_t content);        /*Control 4*/
-void DRV2605L::set_C5(uint8_t content);        /*Control 5*/
-void DRV2605L::set_LRAOLP(uint8_t content);    /*LRA open loop period*/
-void DRV2605L::set_LRARP(uint8_t content);     /*LRA resonance period*/
+void DRV2605L::set_LS(uint8_t content)
+{
+    /*Library Selection*/
+    set(REG_LibrarySelection,content);
+}
+void DRV2605L::set_WS(uint8_t num,uint8_t content)
+{
+    /*Waveform Sequencer, from num 0 to num 7*/
+    set(REG_WaveformSequencer_Head+num,content);
+}
+void DRV2605L::set_ODT(uint8_t content)
+{
+    /*Overdrive Time Offset*/
+    set(REG_OverdriveTimeOffset,content);
+}
+void DRV2605L::set_SPT(uint8_t content)
+{
+    /*Sustain Time Positive Offset*/
+    set(REG_SustainTimeOffsetPositive,content);
+}       
+void DRV2605L::set_SNT(uint8_t content)
+{
+    /*Sustain Time Negative Offset*/
+    set(REG_SustainTimeOffsetNegative,content);
+}       
+void DRV2605L::set_BRT(uint8_t content)
+{
+    /*Brake Time*/
+    set(REG_BrakeTimeOffset,content);
+}       
+void DRV2605L::set_A2VC(uint8_t content)
+{
+    /*Audio-to-Vibe Control*/
+    set(REG_Audio2VibeControl,content);
+}      
+void DRV2605L::set_A2VMinIL(uint8_t content)
+{
+    /*Audio-to-Vibe Minimum Input Level*/
+    set(REG_Audio2VibeMinimumInputLevel,content);
+}  
+void DRV2605L::set_A2VMaxIL(uint8_t content)
+{
+    /*Audio-to-Vibe Maximum Input Level*/
+    set(REG_Audio2VibeMaximumIuputLevel,content);
+}   
+void DRV2605L::set_A2VMinOD(uint8_t content)
+{
+    /*Audio-to-Vibe Minimum Output Drive*/
+    set(REG_Audio2VibeMinimumOuputDrive,content);
+}  
+void DRV2605L::set_A2VMaxOD(uint8_t content)
+{
+    /*Audio-to-Vibe Maximum Output Drive*/
+    set(REG_Audio2VibeMaximumOuputDrive,content);
+}   
+void DRV2605L::set_RV(uint8_t content)
+{
+    /*Rated Voltage -> use in auto calibration*/
+    set(REG_RatedVoltage,content);
+}        
+void DRV2605L::set_ODC(uint8_t content)
+{
+    /*Overdrive Clamp Voltage*/
+    set(REG_OverdriveClampVoltage,content);
+}       
+void DRV2605L::set_FC(uint8_t content)
+{
+    /*Feedback Control*/
+    set(REG_FeedbackControl,content);
+}        
+void DRV2605L::set_C1(uint8_t content)
+{
+    /*Control 1*/
+    set(REG_Control1,content);
+}        
+void DRV2605L::set_C2(uint8_t content)
+{
+    /*Control 2*/
+    set(REG_Control2,content);
+}        
+void DRV2605L::set_C3(uint8_t content)
+{
+    /*Control 3*/
+    set(REG_Control3,content);
+}        
+void DRV2605L::set_C4(uint8_t content)
+{
+    /*Control 4*/
+    set(REG_Control4,content);
+}        
+void DRV2605L::set_C5(uint8_t content)
+{
+    /*Control 5*/
+    set(REG_Control5,content);
+}        
+void DRV2605L::set_LRAOLP(uint8_t content)
+{
+    /*LRA open loop period*/
+    set(REG_LRAOpenLoopPeriod,content);
+}    
+void DRV2605L::set_LRARP(uint8_t content)
+{
+    /*LRA resonance period*/
+    set(REG_LRAResonancePeriod,content);
+}     
+void DRV2605L::set_GO(uint8_t content)
+{
+    /*Go*/
+    set(REG_Go,content);
+}
+void DRV2605L::set_ACCR(uint8_t content)
+{
+    set(REG_AutoCalibrationCompensationResult,content);
+}
+void DRV2605L::set_ACBR(uint8_t content)
+{
+    set(REG_AutoCalibrationBackEMFResult,content);
+}
+void DRV2605L::set_VVM(uint8_t content)
+{
+    set(REG_VbatVoltageMonitor,content);
+}
+
+
+/*--------------------------Private---------------------------*/
+void DRV2605L::info(uint32_t reg_addr,uint8_t content)
+{
+    print("Register address is {0} : {1} {2}, hex : {3}\n",
+        format(emphasis::bold | fg(color::cyan),"{:#04x}",reg_addr),
+        format(emphasis::bold | fg(color::red),"{:04b}",(content>>4)),
+        format(emphasis::bold | fg(color::yellow),"{:04b}",(0b00001111)&content),
+        format(emphasis::bold | fg(color::green),"{:02x}",content)
+    );
+}
+
+void DRV2605L::set(uint32_t reg_addr,uint8_t content)
+{
+    content |= read(reg_addr);
+    info(reg_addr,content);
+    //write(reg_addr,content);
+}

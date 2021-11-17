@@ -112,6 +112,7 @@ namespace LRA_DRV2605L{
         WS_WAIT_wait                            = 0x80, /*10ms*[0:6]*/
         WS_WAIT_do                              = 0x00,
         WS_WAIT_default                         = WS_WAIT_do,
+        WS_NUM                                  = 8,
         /*----------------------------------------------------------*/
         WS_WAV_FRM_SEQ_default                  = 0x00,
 
@@ -171,7 +172,7 @@ namespace LRA_DRV2605L{
 
         //FeedBack Control
         FC_N_ERM_LRA_erm                         = 0x00,
-        FC_N_ERM_LRA_erm                         = 0x80,
+        FC_N_ERM_LRA_lra                         = 0x80,
         /*----------------------------------------------------------*/
         FC_FB_BRAKE_FACTOR_1x                    = 0x00,
         FC_FB_BRAKE_FACTOR_2x                    = 0b00010000,
@@ -181,6 +182,7 @@ namespace LRA_DRV2605L{
         FC_FB_BRAKE_FACTOR_8x                    = 0b01010000,
         FC_FB_BRAKE_FACTOR_16x                   = 0b01100000,
         FC_FB_BRAKE_FACTOR_braking_disabled      = 0b01110000,
+        FC_FB_BRAKE_FACTOR_default               = FC_FB_BRAKE_FACTOR_4x,
         /*----------------------------------------------------------*/
         FC_LOOP_GAIN_low                         = 0x00,
         FC_LOOP_GAIN_medium                      = 0b00000100,
@@ -200,6 +202,8 @@ namespace LRA_DRV2605L{
         /*----------------------------------------------------------*/
         C1_AC_COUPLE_on                          = 0x40,
         C1_AC_COUPLE_off                         = 0x00,    //on only if using 'analog' input signal
+        /*----------------------------------------------------------*/
+        C1_DRIVE_TIME_default                    = 0x13,
         
         //Control 2
         C2_BIDIR_INPUT_on                        = 0x80,    //both
@@ -280,7 +284,7 @@ namespace LRA_DRV2605L{
         /*----------------------------------------------------------*/
         C3_DATA_FORMAT_RTP_signed                = 0x00,
         C3_DATA_FORMAT_RTP_unsigned              = 0b00001000,  /*RTP data unsigned or signed*/
-        C3_DATA_FORMAT_RTP_                      = C3_DATA_FORMAT_RTP_signed,
+        C3_DATA_FORMAT_RTP_default               = C3_DATA_FORMAT_RTP_signed,
         /*----------------------------------------------------------*/
         C3_LRA_DRIVE_MODE_once_per_cycle         = 0x00,
         C3_LRA_DRIVE_MODE_twice_per_cycle        = 0b00000100,
@@ -439,29 +443,32 @@ namespace LRA_DRV2605L{
              * 
              * @return ssize_t 
              */
-            ssize_t set_LRA_6s();        
+            void set_LRA_6s();        
 
             /*Setting function*/
-            void set_soft_reset();       /*Write all by Default_Value*/
-            void set_hard_reset();       /*Write 0x01 with 0x80*/
-            void set_go();               /*Set go bit*/
+            void soft_reset();       /*Write all by Default_Value*/
+            void hard_reset();       /*Write 0x01 with 0x80*/
+            void run();               /*Set go bit*/
             void set_autoCalibration();  /*Set auto calibration related registers*/
 
-            void unset_go();             /*Cancel go bit*/
+            void stop();             /*Cancel go bit*/
 
             /*Get function*/
             uint8_t get_ACCR();          /*Get Auto-Calibration Compensation Result*/
             uint8_t get_ACBR();          /*Get Auto-Calibration Back-EMF Result*/
             uint8_t get_VVM();           /*Get Vbat Voltage Monitor*/
+            uint8_t get_LRARP();
 
         protected:
-            /*return value PI_I2C 's func pointer i2c  v.s. create a var 's type is PI_I2C*/
             I2CDevice i2c;
             Data data;
+            
+            /*Register related*/
             void set_MODE(uint8_t);      /*Mode*/
             void set_RTP(uint8_t);       /*Real-Time Playback Input*/
             void set_LS(uint8_t);        /*Library Selection*/
             void set_WS(uint8_t,uint8_t);/*Waveform Sequencer*/
+            void set_GO(uint8_t);         /*Go*/
             void set_ODT(uint8_t);       /*Overdrive Time Offset*/
             void set_SPT(uint8_t);       /*Sustain Time Positive Offset*/
             void set_SNT(uint8_t);       /*Sustain Time Negative Offset*/
@@ -481,8 +488,13 @@ namespace LRA_DRV2605L{
             void set_C5(uint8_t);        /*Control 5*/
             void set_LRAOLP(uint8_t);    /*LRA open loop period*/
             void set_LRARP(uint8_t);     /*LRA resonance period*/
+            void set_ACCR(uint8_t);      /*Auto-Calibration Compensation Result*/
+            void set_ACBR(uint8_t);      /*Auto-Calibration Back-EMF Result*/ 
+            void set_VVM(uint8_t);       /*Vbat Voltage Monitor*/
 
         private:
+            void info(uint32_t reg_addr,uint8_t content);
+            void set(uint32_t reg_addr,uint8_t);
     };
 }
 #endif
