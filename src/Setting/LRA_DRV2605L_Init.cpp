@@ -6,9 +6,12 @@
 using namespace LRA_DRV2605L; 
 
 int main(){
+
+    /*set up enable*/
     wiringPiSetup () ;
     pinMode(25,OUTPUT);
     digitalWrite (25, HIGH);
+
     DRV2605L x_drv(SLAVE_DEFAULT_ID);
     x_drv.init();
 
@@ -35,7 +38,7 @@ int main(){
         // x_drv.print_all_register();
 
     /*try setting use set_LRA_6s()*/
-        x_drv.hard_reset();
-        sleep(2);
+        //x_drv.hard_reset();
+        //sleep(2);
         x_drv.run_autoCalibration();
     }

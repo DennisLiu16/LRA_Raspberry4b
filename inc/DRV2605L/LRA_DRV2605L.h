@@ -34,6 +34,15 @@ namespace LRA_DRV2605L{
         SLAVE_Z_ID       = 0x73,
     }SLAVE_ID;
 
+    typedef enum{
+        PWM_X            = 0,
+        PWM_Y            = 1,
+        PWM_Z            = 2,
+        EN_X             = 3,
+        EN_Y             = 4,
+        EN_Z             = 5,
+    }PIN;
+
     /*Register*/
     typedef enum{
         REG_Status                              = 0x00,
@@ -450,7 +459,6 @@ namespace LRA_DRV2605L{
             void set_LRA_6s();        
 
             /*Setting function*/
-            void soft_reset();       /*Write all by Default_Value*/
             void hard_reset();       /*Write 0x01 with 0x80*/
             void run();               /*Set go bit*/
             void run_autoCalibration();  /*Set auto calibration related registers*/
@@ -461,7 +469,8 @@ namespace LRA_DRV2605L{
             uint8_t get_ACCR();          /*Get Auto-Calibration Compensation Result*/
             uint8_t get_ACBR();          /*Get Auto-Calibration Back-EMF Result*/
             uint8_t get_VVM();           /*Get Vbat Voltage Monitor*/
-            uint8_t get_LRARP();
+            uint8_t get_LRARP();         /*Get Period of LRA after auto calibration*/
+            void get_auto_calibration_info();
 
         protected:
             I2CDevice i2c;

@@ -49,7 +49,7 @@ void DRV2605L::set_LRA_6s()
     set_MODE(
         MODE_DEV_RESET_default |
         MODE_MODE_auto_calibration |        /*if you use pwm/analog -> C3*/
-        MODE_STANDBY_ready  
+        MODE_STANDBY_standby 
     );
     set_LS(LS_HI_Z_default | LS_LIBRARY_SEL_lra);
 
@@ -89,7 +89,7 @@ void DRV2605L::set_LRA_6s()
     );
     set_C4(
         C4_ZC_DET_TIME_default |
-        C4_AUTO_CAL_TIME_default      /*should tune*/
+        C4_AUTO_CAL_TIME_500To700ms      /*should tune*/
     );
     set_C5(
         C5_AUTO_OL_CNT_default |
@@ -120,7 +120,7 @@ void DRV2605L::set_LRA_6s()
     set_LRAOLP(LRAOLP_OL_LRA_PERIOD_default);/*set this if you enable LRA open loop*/
 
     /*check*/
-    print("set LRA done \n ");
+    print("set LRA done \n");
 }
 
 ssize_t DRV2605L::read(uint32_t reg_addr,void *buf,size_t len){
@@ -212,11 +212,6 @@ ssize_t DRV2605L::write(uint32_t reg_addr,uint8_t content)
     return write(reg_addr,c,1);
 }
 
-void DRV2605L::soft_reset()
-{
-    /*Write all by Default_Value*/
-}       
-
 void DRV2605L::hard_reset()
 {
     /*Write 0x01 with 0x80*/
@@ -228,8 +223,7 @@ void DRV2605L::run()
     /*Set go bit,not valid for EN activate?*/
     /*get mode register*/
     uint8_t tmp = read(REG_Mode);
-    tmp &= ~(1<<7);
-    
+    tmp &= ~(1<<6);
     set(REG_Mode,MODE_STANDBY_ready|tmp);
     set(REG_Go,GO_GO_go);
 }
@@ -238,7 +232,7 @@ void DRV2605L::stop()
 {
     /*Cancel go bit, not valid for EN activate?*/
     uint8_t tmp = read(REG_Mode);
-    tmp &= ~(1<<7);
+    tmp &= ~(1<<6);
     set(REG_Go,GO_GO_stop);
     set(REG_Mode,MODE_STANDBY_standby|tmp);
 }   
@@ -247,31 +241,47 @@ void DRV2605L::run_autoCalibration()
 {
     set_LRA_6s();
     run();
-    sleep(1.5);
-    print_all_register();
+    sleep(1.5); // look at C4
+    get_auto_calibration_info();
 }
 
 /*Get function*/
-uint8_t DRV2605L::get_ACCR()
+inline uint8_t DRV2605L::get_ACCR()
 {
     /*Get Auto-Calibration Compensation Result*/
     return read(REG_AutoCalibrationCompensationResult);
 }          
-uint8_t DRV2605L::get_ACBR()
+inline uint8_t DRV2605L::get_ACBR()
 {
     /*Get Auto-Calibration Back-EMF Result*/
     return read(REG_AutoCalibrationBackEMFResult);
 
 }          
-uint8_t DRV2605L::get_VVM()
+inline uint8_t DRV2605L::get_VVM()
 {
     /*Get Vbat Voltage Monitor*/
     return read(REG_VbatVoltageMonitor);
 }           
-uint8_t DRV2605L::get_LRARP()
+inline uint8_t DRV2605L::get_LRARP()
 {
     /*Get LRA Resonance Period*/
     return read(REG_LRAResonancePeriod);
+}
+
+void DRV2605L::get_auto_calibration_info()
+{
+    if( (read(REG_Status) & (1<<3)) != 0 )
+    {
+        print("Auto calibration failed\n");
+    }
+    else
+    {
+        print("--------------------------\n");
+        print("Auto Calibration successed\n");
+        print("LRA resonance frequency : {:.3f} Hz\n",1e6/((double)read(REG_LRAResonancePeriod)*98.46));
+        print("Leaving Auto Calibration Mode\n");
+    }
+        
 }
 
 /*------------------------------------------Protected-----------------------------------------------*/
