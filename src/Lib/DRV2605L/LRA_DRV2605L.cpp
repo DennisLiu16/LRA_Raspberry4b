@@ -48,8 +48,8 @@ void DRV2605L::set_LRA_6s()
     /*Search should tune to find what you may need to adjust*/
     set_MODE(
         MODE_DEV_RESET_default |
-        MODE_MODE_internal_trigger |        /*if you use pwm/analog -> C3*/
-        MODE_STANDBY_default  
+        MODE_MODE_auto_calibration |        /*if you use pwm/analog -> C3*/
+        MODE_STANDBY_ready  
     );
     set_LS(LS_HI_Z_default | LS_LIBRARY_SEL_lra);
 
@@ -89,7 +89,7 @@ void DRV2605L::set_LRA_6s()
     );
     set_C4(
         C4_ZC_DET_TIME_default |
-        C4_AUTO_CAL_TIME_default       /*should tune*/
+        C4_AUTO_CAL_TIME_default      /*should tune*/
     );
     set_C5(
         C5_AUTO_OL_CNT_default |
@@ -97,8 +97,7 @@ void DRV2605L::set_LRA_6s()
         C5_PLAYBACK_INTERVAL_default |
         C5_BLANKING_TIME_lra_default |  /*LRA should tune*/
         C5_IDISS_TIME_lra_default       /*LRA should tune*/
-    );
-    
+    );    
 
     /*Optional*/
     set_RTP(RTP_RTP_INPUT_default); /*set this if you use RTP mode*/
@@ -119,6 +118,9 @@ void DRV2605L::set_LRA_6s()
     set_LRARP(LRARP_LRA_PERIOD_default);
 
     set_LRAOLP(LRAOLP_OL_LRA_PERIOD_default);/*set this if you enable LRA open loop*/
+
+    /*check*/
+    print("set LRA done \n ");
 }
 
 ssize_t DRV2605L::read(uint32_t reg_addr,void *buf,size_t len){
@@ -168,8 +170,8 @@ void DRV2605L::print_all_register()
         format("{:#04x}",i),
         format("{:02x}",all[i]),
         format("{:02x}",Default_Value[i]),
-        format("{:08b}",all[i]),
-        format("{:08b}",Default_Value[i]),
+        format("{:04b} {:04b}",all[i] >> 4,all[i] & 0b1111),
+        format("{:04b} {:04b}",Default_Value[i] >> 4,Default_Value[i]& 0b1111),
         col_width,
         format(emphasis::bold | fg(color::yellow),"{0:>{1}}",isSame(all[i],Default_Value[i]), col_width)
         );
@@ -224,21 +226,29 @@ void DRV2605L::hard_reset()
 void DRV2605L::run()
 {
     /*Set go bit,not valid for EN activate?*/
-    set(REG_Mode,MODE_STANDBY_ready);
+    /*get mode register*/
+    uint8_t tmp = read(REG_Mode);
+    tmp &= ~(1<<7);
+    
+    set(REG_Mode,MODE_STANDBY_ready|tmp);
     set(REG_Go,GO_GO_go);
 }
 
 void DRV2605L::stop()
 {
     /*Cancel go bit, not valid for EN activate?*/
+    uint8_t tmp = read(REG_Mode);
+    tmp &= ~(1<<7);
     set(REG_Go,GO_GO_stop);
-    set(REG_Mode,MODE_STANDBY_standby);
+    set(REG_Mode,MODE_STANDBY_standby|tmp);
 }   
 
-void DRV2605L::set_autoCalibration()
+void DRV2605L::run_autoCalibration()
 {
-    /*Set auto calibration related registers*/
-    
+    set_LRA_6s();
+    run();
+    sleep(1.5);
+    print_all_register();
 }
 
 /*Get function*/
@@ -413,7 +423,8 @@ void DRV2605L::info(uint32_t reg_addr,uint8_t content)
 
 void DRV2605L::set(uint32_t reg_addr,uint8_t content)
 {
-    content |= read(reg_addr);
-    info(reg_addr,content);
-    //write(reg_addr,content);
+    //uint8_t need_to_change = content | read(reg_addr);    //bug 
+    //content |= read(reg_addr);
+    //info(reg_addr,content);
+    write(reg_addr,content);
 }

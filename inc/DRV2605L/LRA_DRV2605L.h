@@ -16,6 +16,10 @@
 #include <I2c/i2c.h>
 #include <ErrorCode/LRA_ErrorCode.h>
 #include <PI/LRA_PI_Util.h>
+extern "C" {
+#include <wiringPi.h>
+}
+
 
 namespace LRA_DRV2605L{
     using namespace LRA_PI_Util;
@@ -89,7 +93,7 @@ namespace LRA_DRV2605L{
         MODE_MODE_diagnostics                   = 0x06,
         MODE_MODE_auto_calibration              = 0x07,  /*need to set FC*/
         MODE_MODE_default                       = MODE_MODE_internal_trigger,
-
+        
         //Real-Time Playback Input
         RTP_RTP_INPUT_default                   = 0x00, 
 
@@ -194,7 +198,7 @@ namespace LRA_DRV2605L{
         FC_BEMF_GAIN_medium                      = 0x01,
         FC_BEMF_GAIN_high                        = 0x02,
         FC_BEMF_GAIN_very_high                   = 0x03,    //look at page.43
-        FC_BEMF_GAIN_default                     = FC_BEMF_GAIN_medium,
+        FC_BEMF_GAIN_default                     = FC_BEMF_GAIN_high,
 
         //Control 1
         C1_STARTUP_BOOST_on                      = 0x80,
@@ -377,7 +381,7 @@ namespace LRA_DRV2605L{
     uint8_t Default_Value[REG_NUM] = {
         0xe0, 0x40, 0x0,  0x1,  0x1,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0,  0x0, 
         0x0,  0x05, 0x19, 0xff, 0x19, 0xff, 0x3e, 0x8c, 0x0c, 0x6c, 0x36, 0x93, 0xf5, 0xa0, 0x20, 0x80,
-        0x33, 0x0 , 0x0
+        0x0,  0x0 , 0x0
     };
 
     /*class*/
@@ -449,7 +453,7 @@ namespace LRA_DRV2605L{
             void soft_reset();       /*Write all by Default_Value*/
             void hard_reset();       /*Write 0x01 with 0x80*/
             void run();               /*Set go bit*/
-            void set_autoCalibration();  /*Set auto calibration related registers*/
+            void run_autoCalibration();  /*Set auto calibration related registers*/
 
             void stop();             /*Cancel go bit*/
 
