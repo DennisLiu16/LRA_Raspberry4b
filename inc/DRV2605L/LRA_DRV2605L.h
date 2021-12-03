@@ -18,6 +18,7 @@
 #include <PI/LRA_PI_Util.h>
 extern "C" {
 #include <wiringPi.h>
+# include <signal.h>
 }
 
 
@@ -462,6 +463,7 @@ namespace LRA_DRV2605L{
             void hard_reset();       /*Write 0x01 with 0x80*/
             void run();               /*Set go bit*/
             void run_autoCalibration();  /*Set auto calibration related registers*/
+            void run_RTPtest();     
 
             void stop();             /*Cancel go bit*/
 

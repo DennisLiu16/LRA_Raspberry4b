@@ -16,6 +16,7 @@ DRV2605L::~DRV2605L(){
     if(is_init)
     {
         /*close bus*/
+        stop();
         i2c_close(i2c.bus);
     }
 }
@@ -48,7 +49,7 @@ void DRV2605L::set_LRA_6s()
     /*Search should tune to find what you may need to adjust*/
     set_MODE(
         MODE_DEV_RESET_default |
-        MODE_MODE_auto_calibration |        /*if you use pwm/analog -> C3*/
+        MODE_MODE_realtime_playback |        /*if you use pwm/analog -> C3*/
         MODE_STANDBY_standby 
     );
     set_LS(LS_HI_Z_default | LS_LIBRARY_SEL_lra);
@@ -72,14 +73,14 @@ void DRV2605L::set_LRA_6s()
         C1_DRIVE_TIME_default           /*should tune*/
     );
     set_C2(
-        C2_BIDIR_INPUT_default |
+        C2_BIDIR_INPUT_off |
         C2_BRAKE_STABILIZER_default |
         C2_SAMPLE_TIME_default |        /*should tune*/
         C2_BLANKING_TIME_lra_default |  /*should tune*/
         C2_IDISS_TIME_lra_default       /*should tune*/
     );
     set_C3(
-        C3_DATA_FORMAT_RTP_default |    /*use in pwm or analog*/ /*should tune*/
+        C3_DATA_FORMAT_RTP_signed |    /*use in pwm or analog*/ /*should tune*/
         C3_ERM_OPEN_LOOP_default |      /*ERM use*/
         C3_SUPPLY_COMP_DIS_enabled |    /*default enabled,if you have done this by yourself, turn off*/
         C3_DATA_FORMAT_RTP_default |    /*use in RTP mode*/
@@ -243,6 +244,36 @@ void DRV2605L::run_autoCalibration()
     run();
     sleep(1.5); // look at C4
     get_auto_calibration_info();
+}
+
+void DRV2605L::run_RTPtest()
+{
+    set_LRA_6s();
+    run();
+    uint8_t amp = 0;
+    bool flag = 0;
+    int loop = -1;
+    /*Loop test*/
+    while(loop <= 1)
+    {
+        if(!flag)
+            amp++;
+        else    
+            amp--;
+
+        if(amp >= 255)
+            flag = 1;
+        else if(amp == 0)
+        {   flag = 0;
+            loop++;
+        }
+            
+            
+        set_RTP(amp);
+        print("LRA resonance frequency : {:.3f} Hz , amp = {}\n",1e6/((double)read(REG_LRAResonancePeriod)*98.46),amp);
+        usleep(2e4);
+    }
+    stop();
 }
 
 /*Get function*/
@@ -438,3 +469,5 @@ void DRV2605L::set(uint32_t reg_addr,uint8_t content)
     //info(reg_addr,content);
     write(reg_addr,content);
 }
+
+

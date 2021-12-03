@@ -4,15 +4,32 @@
 #include <DRV2605L/LRA_DRV2605L.h>
 
 using namespace LRA_DRV2605L; 
+DRV2605L x_drv(SLAVE_DEFAULT_ID);
+
+void signal_handler(int signum)
+{
+    /*can't use in vs code debug mode?*/
+    if(signum == SIGINT)
+    {
+        print("\nCtrl+C triggered, leaving process\n");
+        x_drv.stop();
+        exit(1);
+    }
+}
 
 int main(){
+
+    /*register signal*/
+    if(signal(SIGINT,signal_handler)==SIG_ERR){
+        print("Failed to get signal\n");
+    }
 
     /*set up enable*/
     wiringPiSetup () ;
     pinMode(25,OUTPUT);
     digitalWrite (25, HIGH);
 
-    DRV2605L x_drv(SLAVE_DEFAULT_ID);
+    
     x_drv.init();
 
     /*single read test*/
@@ -38,7 +55,9 @@ int main(){
         // x_drv.print_all_register();
 
     /*try setting use set_LRA_6s()*/
-        //x_drv.hard_reset();
-        //sleep(2);
-        x_drv.run_autoCalibration();
+        //x_drv.run_autoCalibration();  //need to change set_LRA_6s first
+
+    /*try RTP mode*/
+        while(true)
+            x_drv.run_RTPtest();    // change to unsigned in 0x1D
     }
