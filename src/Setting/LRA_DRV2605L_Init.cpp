@@ -2,9 +2,11 @@
 #include <stdio.h> 
 #include <string.h> 
 #include <DRV2605L/LRA_DRV2605L.h>
+#include <MPU6050/MPU6050.h>
 
 using namespace LRA_DRV2605L; 
-DRV2605L x_drv(SLAVE_DEFAULT_ID);
+DRV2605L x_drv(25,SLAVE_DEFAULT_ID);
+
 
 void signal_handler(int signum)
 {
@@ -12,7 +14,8 @@ void signal_handler(int signum)
     if(signum == SIGINT)
     {
         print("\nCtrl+C triggered, leaving process\n");
-        x_drv.stop();
+        if(x_drv.is_init)
+            x_drv.stop();
         exit(1);
     }
 }
@@ -24,10 +27,10 @@ int main(){
         print("Failed to get signal\n");
     }
 
-    /*set up enable*/
+    /*set up global*/
     wiringPiSetup () ;
-    pinMode(25,OUTPUT);
-    digitalWrite (25, HIGH);
+    //pinMode(25,OUTPUT);
+    //digitalWrite (25, HIGH);  //move into class DRV2605L init
 
     
     x_drv.init();
@@ -35,7 +38,7 @@ int main(){
     /*single read test*/
         // uint8_t test;
         // test = x_drv.read(0x00);
-        // printf("%x\n",test);
+        // print("%x\n",test);
     /*print all register test*/
         //x_drv.print_all_register();
     /*read mutiple bytes test*/
@@ -60,4 +63,7 @@ int main(){
     /*try RTP mode*/
         while(true)
             x_drv.run_RTPtest();    // change to unsigned in 0x1D
+    
+    /*try MPU6050*/
+        
     }

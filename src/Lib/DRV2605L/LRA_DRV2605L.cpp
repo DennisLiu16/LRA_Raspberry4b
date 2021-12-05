@@ -1,13 +1,11 @@
 #include <DRV2605L/LRA_DRV2605L.h>
 using namespace LRA_DRV2605L;
 
-DRV2605L::DRV2605L(){
-
-}
-
-DRV2605L::DRV2605L(int slave_id /*=SLAVE_DEFAULT_ID*/){
+/*(EN_pin,slav_id)*/
+DRV2605L::DRV2605L(int EN_pin,int slave_id /*=SLAVE_DEFAULT_ID*/){
 
     this->slave_id = slave_id;
+    this->EN_pin = EN_pin;
     /*class constructor*/
     this->data = Data();
 }
@@ -32,6 +30,8 @@ void DRV2605L::init(){
 
         /*open successed, init i2c info*/
         i2c_init_device(&i2c,tmp_port,slave_id);
+        pinMode(EN_pin,OUTPUT);
+        digitalWrite(EN_pin, HIGH);
         is_init = 1;
     }
     catch(ErrorType e){
@@ -246,6 +246,10 @@ void DRV2605L::run_autoCalibration()
     get_auto_calibration_info();
 }
 
+/**
+ * @brief loop test
+ * 
+ */
 void DRV2605L::run_RTPtest()
 {
     set_LRA_6s();
@@ -268,12 +272,17 @@ void DRV2605L::run_RTPtest()
             loop++;
         }
             
-            
-        set_RTP(amp);
-        print("LRA resonance frequency : {:.3f} Hz , amp = {}\n",1e6/((double)read(REG_LRAResonancePeriod)*98.46),amp);
+        set_amplitude(amp);
         usleep(2e4);
     }
     stop();
+}
+
+/*Set function*/
+inline void DRV2605L::set_amplitude(uint8_t amp)
+{
+    set_RTP(amp);
+    print("LRA resonance frequency : {:.3f} Hz , amp = {}\n",get_operating_hz(),amp);
 }
 
 /*Get function*/
@@ -293,10 +302,10 @@ inline uint8_t DRV2605L::get_VVM()
     /*Get Vbat Voltage Monitor*/
     return read(REG_VbatVoltageMonitor);
 }           
-inline uint8_t DRV2605L::get_LRARP()
+inline double DRV2605L::get_operating_hz()
 {
     /*Get LRA Resonance Period*/
-    return read(REG_LRAResonancePeriod);
+    return 1e6/((double)read(REG_LRAResonancePeriod)*98.46);
 }
 
 void DRV2605L::get_auto_calibration_info()
@@ -309,7 +318,7 @@ void DRV2605L::get_auto_calibration_info()
     {
         print("--------------------------\n");
         print("Auto Calibration successed\n");
-        print("LRA resonance frequency : {:.3f} Hz\n",1e6/((double)read(REG_LRAResonancePeriod)*98.46));
+        print("LRA resonance frequency : {:.3f} Hz\n",get_operating_hz());
         print("Leaving Auto Calibration Mode\n");
     }
         

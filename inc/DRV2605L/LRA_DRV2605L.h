@@ -18,7 +18,7 @@
 #include <PI/LRA_PI_Util.h>
 extern "C" {
 #include <wiringPi.h>
-# include <signal.h>
+#include <signal.h>
 }
 
 
@@ -398,11 +398,12 @@ namespace LRA_DRV2605L{
     class DRV2605L{
         public:
             DRV2605L();
-            DRV2605L(int slave_id = SLAVE_DEFAULT_ID);
+            DRV2605L(int EN_pin,int slave_id = SLAVE_DEFAULT_ID);
             ~DRV2605L();
 
             bool is_init = 0;
             int slave_id;
+            int EN_pin;
             uint16_t errCode;
 
             /**
@@ -467,11 +468,13 @@ namespace LRA_DRV2605L{
 
             void stop();             /*Cancel go bit*/
 
+            void set_amplitude(uint8_t);
+
             /*Get function*/
             uint8_t get_ACCR();          /*Get Auto-Calibration Compensation Result*/
             uint8_t get_ACBR();          /*Get Auto-Calibration Back-EMF Result*/
             uint8_t get_VVM();           /*Get Vbat Voltage Monitor*/
-            uint8_t get_LRARP();         /*Get Period of LRA after auto calibration*/
+            double  get_operating_hz();         /*Get Period of LRA after auto calibration*/
             void get_auto_calibration_info();
 
         protected:
