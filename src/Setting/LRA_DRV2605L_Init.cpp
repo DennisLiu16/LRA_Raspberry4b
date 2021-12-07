@@ -6,7 +6,7 @@
 
 using namespace LRA_DRV2605L; 
 DRV2605L x_drv(25,SLAVE_DEFAULT_ID);
-MPU6050 acc(0x68,1);
+//MPU6050 acc(0x68,1);
 
 void signal_handler(int signum)
 {
@@ -58,13 +58,13 @@ int main(){
         //x_drv.run_autoCalibration();  //need to change set_LRA_6s first
 
     /*try RTP mode*/
-        //while(true)
-            //x_drv.run_RTPtest();    // change to unsigned in 0x1D
+        while(true)
+            x_drv.run_RTPtest();    // change to unsigned in 0x1D
     
     /*try MPU6050*/
         //run in other thread - see MPU6050.cpp _update()
-        while(true)
-        {
-            usleep(1e6);
-        }
+        // while(true)
+        // {
+        //     usleep(1e6);
+        // }
 }

@@ -1,0 +1,3 @@
+[submodule "test/spidev-test"]
+	path = test/spidev-test
+	url = https://github.com/rm-hull/spidev-test
