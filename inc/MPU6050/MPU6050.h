@@ -14,7 +14,7 @@
 //See the MPU6000 Register Map for more information
 
 
-#define ACCEL_RANGE 0 //Select which accelerometer range to use (see the table below) - Default is 0
+#define ACCEL_RANGE 1 //Select which accelerometer range to use (see the table below) - Default is 0
 //	Accelerometer Range
 //	0	+/- 2g
 //	1	+/- 4g
@@ -25,9 +25,9 @@
 
 //Offsets - supply your own here (calculate offsets with getOffsets function)
 //     Accelerometer
-#define A_OFF_X 19402
-#define A_OFF_Y -2692
-#define A_OFF_Z -8625
+#define A_OFF_X 0
+#define A_OFF_Y 0
+#define A_OFF_Z 0
 //    Gyroscope
 #define G_OFF_X -733
 #define G_OFF_Y 433
@@ -44,6 +44,7 @@
 extern "C" {
 	#include <linux/i2c-dev.h>
 	#include <i2c/smbus.h>
+	#include<stdio.h>
 }
 #include <cmath>
 #include <thread>

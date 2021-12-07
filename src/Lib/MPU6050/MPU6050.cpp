@@ -23,11 +23,16 @@ MPU6050::MPU6050(int8_t addr, bool run_update_thread) {
 		std::cout << "ERR (MPU6050.cpp:MPU6050()): Could not get I2C bus with " << addr << " address. Please confirm that this address is correct\n"; //Print error message
 	}
 
+	#define SMPLRT_DIV_7  0x7
+	#define SMPLRT_DIV_default 0x4
+	#define DLPF_disabled 0x0
+	#define DLPF_reserved 0x7
+
 	i2c_smbus_write_byte_data(f_dev, 0x6b, 0b00000000); //Take MPU6050 out of sleep mode - see Register Map
 
-	i2c_smbus_write_byte_data(f_dev, 0x1a, 0b00000011); //Set DLPF (low pass filter) to 44Hz (so no noise above 44Hz will pass through)
+	i2c_smbus_write_byte_data(f_dev, 0x1a, DLPF_disabled); //Set DLPF (low pass filter) to 44Hz (so no noise above 44Hz will pass through)
 
-	i2c_smbus_write_byte_data(f_dev, 0x19, 0b00000100); //Set sample rate divider (to 200Hz) - see Register Map
+	i2c_smbus_write_byte_data(f_dev, 0x19, SMPLRT_DIV_7); //Set sample rate divider (to 200Hz) - see Register Map
 
 	i2c_smbus_write_byte_data(f_dev, 0x1b, GYRO_CONFIG); //Configure gyroscope settings - see Register Map (see MPU6050.h for the GYRO_CONFIG parameter)
 
@@ -112,19 +117,26 @@ void MPU6050::_update() { //Main update function - runs continuously
 
 	struct timespec begin;
 	struct timespec mid1;
+	FILE *fp,*fp2;
+	fp = fopen("acc_data.txt","wb");
+	fp2 = fopen("acc_data_filter.txt","wb");
 	clock_gettime(CLOCK_REALTIME, &begin);
 	clock_gettime(CLOCK_REALTIME, &start); //Read current time into start variable
+
+	float ax1,ax2,ay1,ay2,az1,az2,ax3,ay3,az3 = 0.0;
+	float g = 0.48306954;
+	int count = 0;
 
 	while (1) { //Loop forever
 		//getGyro(&gr, &gp, &gy); //Get the data from the sensors
 		
-		float old_x = ax,old_y=ay,old_z=az;
+		//float old_x = ax,old_y=ay,old_z=az;
 		getAccel(&ax, &ay, &az);
-		clock_gettime(CLOCK_REALTIME, &mid1); //Save time to end clock
-		printf("%.4f\n",(mid1.tv_sec - start.tv_sec) + (mid1.tv_nsec - start.tv_nsec) / 1e9);
-		ax = 0.8*ax+0.2*old_x;
-		ay = 0.8*ay+0.2*old_y;
-		ax = 0.8*az+0.2*old_z;
+		//clock_gettime(CLOCK_REALTIME, &mid1); //Save time to end clock
+		//printf("%.4f\n",(mid1.tv_sec - start.tv_sec) + (mid1.tv_nsec - start.tv_nsec) / 1e9);
+		// ax = 0.8*ax+0.2*old_x;
+		// ay = 0.8*ay+0.2*old_y;
+		// ax = 0.8*az+0.2*old_z;
 		// //X (roll) axis
 		// _accel_angle[0] = atan2(az, ay) * RAD_T_DEG - 90.0; //Calculate the angle with z and y convert to degrees and subtract 90 degrees to rotate
 		// _gyro_angle[0] = _angle[0] + gr*dt; //Use roll axis (X axis)
@@ -177,9 +189,43 @@ void MPU6050::_update() { //Main update function - runs continuously
 		// }
 		
 		clock_gettime(CLOCK_REALTIME, &end); //Save time to end clock
-		dt = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; //Calculate new dt
+		
+		//dt = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; //Calculate new dt
 		//printf("%.4f, %.4f, %.4f, %.4f\n",(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,ax,ay,az);
-		printf("%.5f, %.3f, %.3f, %.3f\n",dt,ax,ay,az);
+		//write to fd
+		fprintf(fp,"%.9f,%.9f,%.3f,%.3f,%.3f\n",
+			(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,
+			(end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9,
+			ax,ay,az
+		);
+
+		//butter
+		fprintf(fp2,"%.9f,%.9f,%.3f,%.3f,%.3f\n",
+			(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,
+			(end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9,
+			g*((ax-ax2)/(ax-1.53808*ax1+0.65510699*ax2)+(ax-ax2)/(ax+0.0224153*ax1+0.27868289*ax2)),
+			g*((ay-ay2)/(ay-1.53808*ay1+0.65510699*ay2)+(ay-ay2)/(ay+0.0224153*ay1+0.27868289*ay2)),
+			g*((az-az2)/(az-1.53808*az1+0.65510699*az2)+(az-az2)/(az+0.0224153*az1+0.27868289*az2))
+		);
+		
+		// FIR
+		// fprintf(fp2,"%.9f,%.9f,%.3f,%.3f,%.3f\n",
+		// 	(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,
+		// 	(end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9,
+		// 	-0.124731904505151841577870186483778525144*ax +  0.418968202140831191826464419136755168438*ax1+ 0.418968202140831191826464419136755168438*ax2+0.124731904505151841577870186483778525144*ax3,
+		// 	-0.124731904505151841577870186483778525144*ay +  0.418968202140831191826464419136755168438*ay1+ 0.418968202140831191826464419136755168438*ay2+0.124731904505151841577870186483778525144*ay3,
+		// 	-0.124731904505151841577870186483778525144*az +  0.418968202140831191826464419136755168438*az1+ 0.418968202140831191826464419136755168438*az2+0.124731904505151841577870186483778525144*az3
+
+		// );
+		ax1 = ax;
+		ay1 = ay;
+		az1 = az;
+		ax2 = ax1;
+		ay2 = ay1;
+		az2 = az1;
+		ax3 = ax2;
+		ay3 = ay2;
+		az3 = az2;
 		clock_gettime(CLOCK_REALTIME, &start); //Save time to start clock
 	}
 }

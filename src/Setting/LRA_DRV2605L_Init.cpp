@@ -6,7 +6,7 @@
 
 using namespace LRA_DRV2605L; 
 DRV2605L x_drv(25,SLAVE_DEFAULT_ID);
-//MPU6050 acc(0x68,1);
+MPU6050 acc(0x68,1);
 
 void signal_handler(int signum)
 {

@@ -260,20 +260,20 @@ void DRV2605L::run_RTPtest()
     /*Loop test*/
     while(loop <= 1)
     {
-        // if(!flag)
-        //     amp++;
-        // else    
-        //     amp--;
+        if(!flag)
+            amp++;
+        else    
+            amp--;
 
-        // if(amp >= 255)
-        //     flag = 1;
-        // else if(amp == 0)
-        // {   flag = 0;
-        //     loop++;
-        // }
+        if(amp >= 255)
+            flag = 1;
+        else if(amp == 0)
+        {   flag = 0;
+            loop++;
+        }
             
-        set_amplitude(152);
-        //usleep(2e4);
+        set_amplitude(amp);
+        usleep(1e4);
     }
     stop();
 }
