@@ -199,13 +199,28 @@ void MPU6050::_update() { //Main update function - runs continuously
 			ax,ay,az
 		);
 
-		//butter
+		//butter - bandpass
+		// fprintf(fp2,"%.9f,%.9f,%.3f,%.3f,%.3f\n",
+		// 	(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,
+		// 	(end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9,
+		// 	g*g*((ax-ax2)/(ax-1.53808*ax1+0.65510699*ax2)*(ax-ax2)/(ax+0.0224153*ax1+0.27868289*ax2)),
+		// 	g*g*((ay-ay2)/(ay-1.53808*ay1+0.65510699*ay2)*(ay-ay2)/(ay+0.0224153*ay1+0.27868289*ay2)),
+		// 	g*g*((az-az2)/(az-1.53808*az1+0.65510699*az2)*(az-az2)/(az+0.0224153*az1+0.27868289*az2))
+		// );
+
+		//butter - highpass
+		float gain = 0.683532991979542980942596841487102210522 * 0.818971405816819264522621324431383982301;
+		float b12 = -1.55610449194290656471650891035096719861 ;
+		float b13 =  0.71978113132437038235167392485891468823 ;
+		float b22 = -1.298761778074153827589043430634774267673;
+		float b23 =  0.435370189844018151692495166571461595595 ;
+
 		fprintf(fp2,"%.9f,%.9f,%.3f,%.3f,%.3f\n",
 			(end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec) / 1e9,
 			(end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9,
-			g*((ax-ax2)/(ax-1.53808*ax1+0.65510699*ax2)+(ax-ax2)/(ax+0.0224153*ax1+0.27868289*ax2)),
-			g*((ay-ay2)/(ay-1.53808*ay1+0.65510699*ay2)+(ay-ay2)/(ay+0.0224153*ay1+0.27868289*ay2)),
-			g*((az-az2)/(az-1.53808*az1+0.65510699*az2)+(az-az2)/(az+0.0224153*az1+0.27868289*az2))
+			gain*((ax-2*ax1+ax2)/(ax+b12*ax1+b13*ax2)*(ax-2*ax1+ax2)/(ax+b22*ax1+b23*ax2)),
+			gain*((ay-2*ay1+ay2)/(ay+b12*ay1+b13*ay2)*(ay-2*ay1+ay2)/(ay+b22*ay1+b23*ay2)),
+			gain*((az-2*az1+az2)/(az+b12*az1+b13*az2)*(az-2*az1+az2)/(az+b22*az1+b23*az2))
 		);
 		
 		// FIR
