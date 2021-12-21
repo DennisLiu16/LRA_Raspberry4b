@@ -271,7 +271,6 @@ void DRV2605L::run_RTPtest()
         {   flag = 0;
             loop++;
         }
-            
         set_amplitude(amp);
         usleep(1e4);
     }
