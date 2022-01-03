@@ -11,8 +11,9 @@
             "request": "launch",
             
             "program": "${workspaceFolder}/build/src/Setting/LRA_Init",
+        //    "program": "${workspaceFolder}/test/spidev-test/spidev_test",
             "args": [],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
