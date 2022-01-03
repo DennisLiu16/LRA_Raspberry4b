@@ -1,4 +1,5 @@
 // using spi
+// several bit pair form a reg
 #ifndef _LRA_ADXL355_H_
 #define _LRA_ADXL355_H_
 
@@ -19,84 +20,27 @@ namespace LRA_ADXL355
 
     class ADXL355{
         public:
-        int fd = 0;
+        int SPI_fd = 0;
         uint8_t* r_single_byte; 
 
-        ADXL355(int channel, int speed,int mode);
-        ~ADXL355();
-
-        /**
-         * @brief Set register in @param regaddr to value @param val with no writemask
-         * 
-         * @param regaddr 
-         * @param val 
-         */
-        void setSingleReg(uint8_t regaddr,uint8_t val);
-
-        /**
-         * @brief Set register in @param regaddr to value @param val with writemask @param mask
-         * 
-         * @param regaddr 
-         * @param val 
-         * @param mask 
-         */
-        void setSingleReg(uint8_t regaddr,uint8_t val,uint8_t mask);
-
-        /**
-         * @brief Set the Single Bit object
-         * 
-         * @param regindex 
-         * @param val 
-         */
-        void setSingleBit(uint8_t regindex,uint8_t val);
-
-        /**
-         * @brief 
-         * 
-         * @param regaddr 
-         * @param buf 
-         * @return uint8_t 
-         */
-        uint8_t readSingleReg(uint8_t regaddr,void* buf);
-
-        /**
-         * @brief 
-         * 
-         * @return uint8_t 
-         */
-        uint8_t readDataOnce();
-
-        /**
-         * @brief 
-         * 
-         * @param regaddr 
-         * @param buf 
-         * @param len 
-         * @return uint8_t 
-         */
-        uint8_t readMutiReg(uint8_t regaddr,void* buf, uint8_t len);
-
-        /**
-         * @brief Get the Whole Reg Write Mask object
-         * 
-         * @param regaddr 
-         * @param len 
-         * @return uint8_t 
-         */
-        uint8_t getWholeRegWriteMask(uint8_t regaddr,uint8_t len);
-
-        /**
-         * @brief Get the Whole Reg Read Mask object
-         * 
-         * @param regaddr 
-         * @param len 
-         * @return uint8_t 
-         */
-        uint8_t getWholeRegReadMask(uint8_t regaddr,uint8_t len);
+        struct Acc{
+            float x,
+            float y,
+            float z
+        }
 
         enum RW{
-            READ = 0,
-            WRITE = 1
+            READ = 1,
+            WRITE = 0
+        };
+
+        enum AccData{
+            Other = 0,
+            X = 1,
+            Empty = 3,
+            Wrong = 4,
+
+            LenDataSet = 9,
         };
         
         enum Default{
@@ -277,7 +221,10 @@ namespace LRA_ADXL355
             /*st2 = */Addr::SELF_TEST,
             /*st1 = */Addr::SELF_TEST,
 
-            /*reset = */Addr::RESET
+            /*reset = */Addr::RESET,
+
+            /*x-axis marker*/Addr::FIFO_DATA,
+            /*empty indicator*/Addr::FIFO_DATA
         };
         const uint8_t startbit[reg_num]={
             /*devid_ad = */0,
@@ -351,7 +298,11 @@ namespace LRA_ADXL355
             /*st2 = */1,
             /*st1 = */0,
 
-            /*reset = */0
+            /*reset = */0,
+
+            /*x-axis marker*/0,
+            /*empty indicator*/1
+
         };
         const uint8_t length[reg_num]={
             /*devid_ad = */8,
@@ -425,12 +376,133 @@ namespace LRA_ADXL355
             /*st2 = */1,
             /*st1 = */1,
 
-            /*reset = */8
+            /*reset = */8,
+            /*x-axis marker*/1,
+            /*empty indicator*/1,
         };
+
+        ADXL355(int channel, int speed,int mode);
+        ~ADXL355();
+
+        /*Setting related*/
+
+        /*Bit Operation related*/
+        /**
+         * @brief Set register at @param regaddr to value @param val with no writemask
+         * 
+         * @param regaddr 
+         * @param val 
+         */
+        void setSingleReg(uint8_t regaddr,uint8_t val);
+
+        /**
+         * @brief Set register at @param regaddr to value @param val with writemask @param mask
+         * 
+         * @param regaddr 
+         * @param val 
+         * @param mask 
+         */
+        void setSingleReg(uint8_t regaddr,uint8_t val,uint8_t mask);
+
+        /**
+         * @brief Set single bit pair of @param regindex to value @param val
+         * 
+         * @param regindex 
+         * @param val 
+         */
+        void setSingleBitPair(regIndex regindex,uint8_t val);
+
+        /**
+         * @brief read reg value at @param regaddr to @param buf
+         * 
+         * @param regaddr 
+         * @param buf 
+         * @return uint8_t 
+         */
+        uint8_t readSingleByte(uint8_t regaddr,uint8_t* buf);
+
+        /**
+         * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to @param buf
+         * 
+         * @return AccData 
+         */
+        AccData readFifoDataOnce(uint8_t* buf);
+
+        /**
+         * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to @param buf
+         * 
+         * @param buf 
+         * @return uint8_t 
+         */
+        uint8_t readFifoDataSetOnce(uint8_t* buf);
+
+        /**
+         * @brief read temperature (12bits) to @param buf
+         * 
+         * @param buf 
+         * @return uint8_t 
+         */
+        uint8_t readTemp(void* buf);
+
+        /**
+         * @brief read @param len  bytes or registers that start from @param regaddr  
+         * 
+         * @param regaddr 
+         * @param buf 
+         * @param len 
+         * @return uint8_t 
+         */
+        uint8_t readMultiByte(uint8_t regaddr,uint8_t* buf, int len);
+
+        /**
+         * @brief ?? 
+         * 
+         * @param regaddr 
+         * @param len 
+         * @return uint8_t 
+         */
+        uint8_t getWholeRegWriteMask(uint8_t regaddr,uint8_t len);
+
+        /**
+         * @brief ??
+         * 
+         * @param regaddr 
+         * @param len 
+         * @return uint8_t 
+         */
+        uint8_t getWholeRegReadMask(uint8_t regaddr,uint8_t len);
+
+        /**
+         * @brief parse acc data in @param buf
+         * 
+         * @param buf 
+         * @return ADXL355::Acc 
+         */
+        ADXL355::Acc ADXL355::ParseAccData(uint8_t* buf,int len);
         
-        /*function*/
+        /*Bit function*/
+        /**
+         * @brief Get bit pair length
+         * 
+         * @param bIndex 
+         * @return uint8_t bit pair length
+         */
         uint8_t getLength(regIndex bIndex);
+
+        /**
+         * @brief Get bit pair startbit pos
+         * 
+         * @param bIndex 
+         * @return uint8_t startbit pos
+         */
         uint8_t getStartBit(regIndex bIndex);
+
+        /**
+         * @brief Get bit pair reg addr
+         * 
+         * @param bIndex 
+         * @return uint8_t bit pair reg addr
+         */
         uint8_t getAddr(regIndex bIndex);
 
 
