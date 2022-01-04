@@ -5,12 +5,37 @@
 
 #include <PI/LRA_PI_Util.h>
 #include <ErrorCode/LRA_ErrorCode.h>
+#include <deque>
 extern "C" {
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 #include <signal.h>
 }
 
+/* 
+    GETMASK is writemask or readmask depend on what you want to do.
+    ==> keep data or read data on certain bits
+        uint8_t data = 0b00011011;
+                         ^^^^^^^^
+                         76543210
+        uint8_t wantR3To4Bits = data & GETMASK(2,3);
+        wantR3To4Bits = 0b00011000;
+                            --
+        you can shift two get value like
+        (wantR3To4Bits >> 3) will get 0b00000011
+
+    ----------------------------------------------------------------------
+    ==> or you want to overwrite some part of register
+        uint8_t data = 0b00011011;
+                         ^^^^^^^^
+                         76543210
+        uint8_t target = (0b1001) << 3;
+
+        // we need to clear 3 to 6 bits first
+        data &= ~GETMASK(4,3);
+
+        uint8_t wantW3To6Bits =  (target & GETMASK(4,3)) | data;
+*/
 #define GETMASK(length,startbit) (((1 << length) - 1) << startbit)
 
 namespace LRA_ADXL355
@@ -19,33 +44,45 @@ namespace LRA_ADXL355
     using namespace LRA_Error;
 
     class ADXL355{
+
+        typedef struct {
+            int timestamp;
+            int intX;
+            int intY;
+            int intZ;
+        }AccUnit;
+
         public:
         int SPI_fd = 0;
         uint8_t* r_single_byte; 
-
-        struct Acc{
-            float x,
-            float y,
-            float z
-        }
+        AccUnit MyAccUnit;
+        deque<AccUnit> dq_AccUnitData;
+        
 
         enum RW{
             READ = 1,
-            WRITE = 0
+            WRITE = 0,
+
+            RWByteMax = 4096,
         };
 
-        enum AccData{
-            Other = 0,
-            X = 1,
-            Empty = 3,
-            Wrong = 4,
+        enum AccDataMarker{
+            Err_UnKnown = -2,
+            Err_Len2Short = -1,
+            isOther = 0,
+            isX = 1,
+            isEmpty = 3,
+    
+            XDataMarkerPos = 2,
 
-            LenDataSet = 9,
+            // length of acc data
+            LenDataAxis= 3, // single axis
+            LenDataSet = 9, // single acc unit
         };
         
         enum Default{
             spi_speed = 5000000,
-            spi_channel = 0,
+            spi_channel = 0,    //CE number
             spi_mode = 0    //from datasheet
         };
 
@@ -107,7 +144,9 @@ namespace LRA_ADXL355
             st2,
             st1,
             reset,
-            reg_num = 56
+            x_axis_marker,
+            empty_indicator,
+            reg_num = 58
         };
 
         protected:
@@ -149,7 +188,7 @@ namespace LRA_ADXL355
             SELF_TEST = 0x2E,
             RESET = 0x2F,
         };
-        const Addr addr[reg_num]={
+        const static Addr addr[reg_num]={
             /*devid_ad = */  Addr::DEVID_AD,
             /*devid_mst = */ Addr::DEVID_MST,
             /*partid = */    Addr::PARTID,
@@ -226,7 +265,7 @@ namespace LRA_ADXL355
             /*x-axis marker*/Addr::FIFO_DATA,
             /*empty indicator*/Addr::FIFO_DATA
         };
-        const uint8_t startbit[reg_num]={
+        const static uint8_t startbit[reg_num]={
             /*devid_ad = */0,
             /*devid_mst = */0,
             /*partid = */0,
@@ -304,7 +343,7 @@ namespace LRA_ADXL355
             /*empty indicator*/1
 
         };
-        const uint8_t length[reg_num]={
+        const static uint8_t length[reg_num]={
             /*devid_ad = */8,
             /*devid_mst = */8,
             /*partid = */8,
@@ -381,12 +420,52 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        ADXL355(int channel, int speed,int mode);
+        public:
+        ADXL355(int channel, int speed,int mode);   // channel is CE pin index
         ~ADXL355();
 
         /*Setting related*/
 
         /*Bit Operation related*/
+
+        /**
+         * @brief parse one acc data set (9 bytes) in @param buf
+         * 
+         * @param buf 
+         * @param len
+         * @return ssize_t, true if parse successfully, or return false
+         */
+        ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf,ssize_t len);
+
+        /**
+         * @brief parse all acc data in @param buf
+         * 
+         * @param buf 
+         * @param len
+         * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
+         */
+        ssize_t ADXL355::ParseAccData(uint8_t* buf,ssize_t len);
+
+        /**
+         * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to @param buf
+         * 
+         * @return ssize_t
+         */
+        ssize_t readFifoDataOnce(uint8_t* buf);
+
+        /**
+         * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to @param buf
+         * 
+         * @details test only -> maybe mess up FIFO order, if you want to get newest certain axis value. You should use readAccX instead 
+         * @param buf 
+         * @return ssize_t
+         */
+        ssize_t readFifoDataSetOnce(uint8_t* buf);
+
+        /*uint8_t readFifoDataSetAll(uint8_t* buf);problem*/
+
+        /*uint8_t check buf start with x data(uint8_t* buf);problem*/
+
         /**
          * @brief Set register at @param regaddr to value @param val with no writemask
          * 
@@ -407,8 +486,12 @@ namespace LRA_ADXL355
         /**
          * @brief Set single bit pair of @param regindex to value @param val
          * 
+         * @details val is "a whole byte", not bit pair correspond value only, you need to locate correct value in correct place to form val. 
+         *          Or use enum reg_val instead.
+         * 
          * @param regindex 
          * @param val 
+         *  
          */
         void setSingleBitPair(regIndex regindex,uint8_t val);
 
@@ -417,24 +500,9 @@ namespace LRA_ADXL355
          * 
          * @param regaddr 
          * @param buf 
-         * @return uint8_t 
+         * @return ssize_t 
          */
-        uint8_t readSingleByte(uint8_t regaddr,uint8_t* buf);
-
-        /**
-         * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to @param buf
-         * 
-         * @return AccData 
-         */
-        AccData readFifoDataOnce(uint8_t* buf);
-
-        /**
-         * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to @param buf
-         * 
-         * @param buf 
-         * @return uint8_t 
-         */
-        uint8_t readFifoDataSetOnce(uint8_t* buf);
+        ssize_t readSingleByte(uint8_t regaddr,uint8_t* buf);
 
         /**
          * @brief read temperature (12bits) to @param buf
@@ -450,15 +518,26 @@ namespace LRA_ADXL355
          * @param regaddr 
          * @param buf 
          * @param len 
-         * @return uint8_t 
+         * @return ssize_t 
          */
-        uint8_t readMultiByte(uint8_t regaddr,uint8_t* buf, int len);
+        ssize_t readMultiByte(uint8_t regaddr,uint8_t* buf, ssize_t len);
+
+        protected:
+        /**
+         * @brief if len > 3, check buf[2] data marker.
+         * 
+         * @details including sho error and empty warning, but not including correct FIFO
+         * 
+         * @param buf 
+         * @return AccDataMarker 
+         */
+        AccDataMarker CheckDataMarker(uint8_t* buf, ssize_t len);
 
         /**
          * @brief ?? 
          * 
          * @param regaddr 
-         * @param len 
+         * @param len // bit operation
          * @return uint8_t 
          */
         uint8_t getWholeRegWriteMask(uint8_t regaddr,uint8_t len);
@@ -471,14 +550,6 @@ namespace LRA_ADXL355
          * @return uint8_t 
          */
         uint8_t getWholeRegReadMask(uint8_t regaddr,uint8_t len);
-
-        /**
-         * @brief parse acc data in @param buf
-         * 
-         * @param buf 
-         * @return ADXL355::Acc 
-         */
-        ADXL355::Acc ADXL355::ParseAccData(uint8_t* buf,int len);
         
         /*Bit function*/
         /**
