@@ -1,5 +1,6 @@
 // using spi
-// several bit pair form a reg
+// several bit pair form a re
+// https://01.org/linuxgraphics/gfx-docs/drm/driver-api/spi.html
 #ifndef _LRA_ADXL355_H_
 #define _LRA_ADXL355_H_
 
@@ -20,7 +21,7 @@ extern "C" {
                          76543210
         uint8_t wantR3To4Bits = data & GETMASK(2,3);
         wantR3To4Bits = 0b00011000;
-                            --
+                            ==
         you can shift two get value like
         (wantR3To4Bits >> 3) will get 0b00000011
 
@@ -33,7 +34,6 @@ extern "C" {
 
         // we need to clear 3 to 6 bits first
         data &= ~GETMASK(4,3);
-
         uint8_t wantW3To6Bits =  (target & GETMASK(4,3)) | data;
 */
 #define GETMASK(length,startbit) (((1 << length) - 1) << startbit)
@@ -44,17 +44,15 @@ namespace LRA_ADXL355
     using namespace LRA_Error;
 
     class ADXL355{
-
-        typedef struct {
-            int timestamp;
+        public:
+        int SPI_fd = 0;
+        uint8_t* r_single_byte; 
+        typedef struct{
+            double timestamp;
             int intX;
             int intY;
             int intZ;
         }AccUnit;
-
-        public:
-        int SPI_fd = 0;
-        uint8_t* r_single_byte; 
         AccUnit MyAccUnit;
         deque<AccUnit> dq_AccUnitData;
         
@@ -81,7 +79,7 @@ namespace LRA_ADXL355
         };
         
         enum Default{
-            spi_speed = 5000000,
+            spi_speed = 10000000,
             spi_channel = 0,    //CE number
             spi_mode = 0    //from datasheet
         };
@@ -149,7 +147,6 @@ namespace LRA_ADXL355
             reg_num = 58
         };
 
-        protected:
         enum class Addr{  //register address
             DEVID_AD = 0x00,
             DEVID_MST = 0x01,
@@ -188,7 +185,7 @@ namespace LRA_ADXL355
             SELF_TEST = 0x2E,
             RESET = 0x2F,
         };
-        const static Addr addr[reg_num]={
+        const Addr addr[reg_num]={
             /*devid_ad = */  Addr::DEVID_AD,
             /*devid_mst = */ Addr::DEVID_MST,
             /*partid = */    Addr::PARTID,
@@ -265,7 +262,7 @@ namespace LRA_ADXL355
             /*x-axis marker*/Addr::FIFO_DATA,
             /*empty indicator*/Addr::FIFO_DATA
         };
-        const static uint8_t startbit[reg_num]={
+        const uint8_t startbit[reg_num]={
             /*devid_ad = */0,
             /*devid_mst = */0,
             /*partid = */0,
@@ -343,7 +340,7 @@ namespace LRA_ADXL355
             /*empty indicator*/1
 
         };
-        const static uint8_t length[reg_num]={
+        const uint8_t length[reg_num]={
             /*devid_ad = */8,
             /*devid_mst = */8,
             /*partid = */8,
@@ -435,7 +432,7 @@ namespace LRA_ADXL355
          * @param len
          * @return ssize_t, true if parse successfully, or return false
          */
-        ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf,ssize_t len);
+        ssize_t ParseOneAccDataUnit(uint8_t* buf,ssize_t len);
 
         /**
          * @brief parse all acc data in @param buf
@@ -444,7 +441,7 @@ namespace LRA_ADXL355
          * @param len
          * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
          */
-        ssize_t ADXL355::ParseAccData(uint8_t* buf,ssize_t len);
+        ssize_t ParseAccData(uint8_t* buf,ssize_t len);
 
         /**
          * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to @param buf
@@ -575,9 +572,6 @@ namespace LRA_ADXL355
          * @return uint8_t bit pair reg addr
          */
         uint8_t getAddr(regIndex bIndex);
-
-
-
     };
 }
 #endif
