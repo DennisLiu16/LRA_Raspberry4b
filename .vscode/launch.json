@@ -10,10 +10,10 @@
             "type": "cppdbg",
             "request": "launch",
             
-            "program": "${workspaceFolder}/build/src/Setting/LRA_Init",
+            "program": "${workspaceFolder}/build/src/Test/ADXL355/ADXL355_Read_Test",
         //    "program": "${workspaceFolder}/test/spidev-test/spidev_test",
             "args": [],
-            "stopAtEntry": true,
+        //    "stopAtEntry": true,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
