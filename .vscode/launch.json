@@ -4,14 +4,32 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) spi_test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/test/spidev-test/spi_test",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+
+        {
+            "name": "(gdb) ADXL355_Read_Test",
             "type": "cppdbg",
             "request": "launch",
             
             "program": "${workspaceFolder}/build/src/Test/ADXL355/ADXL355_Read_Test",
-        //    "program": "${workspaceFolder}/test/spidev-test/spidev_test",
             "args": [],
         //    "stopAtEntry": true,
             "cwd": "${fileDirname}",
@@ -27,4 +45,5 @@
             ]
         }
     ]
+
 }
