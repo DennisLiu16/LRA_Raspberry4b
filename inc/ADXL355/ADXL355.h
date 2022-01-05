@@ -1,6 +1,6 @@
 // using spi
 // several bit pair form a re
-// https://01.org/linuxgraphics/gfx-docs/drm/driver-api/spi.html
+// https://01.org/linuxgraphics/gfx-docs/drm/driver-api/spi.html - linux kernel interface
 #ifndef _LRA_ADXL355_H_
 #define _LRA_ADXL355_H_
 
@@ -426,7 +426,7 @@ namespace LRA_ADXL355
         /*Bit Operation related*/
 
         /**
-         * @brief parse one acc data set (9 bytes) in @param buf
+         * @brief parse one acc data set (9 bytes) in buf
          * 
          * @param buf 
          * @param len
@@ -435,7 +435,7 @@ namespace LRA_ADXL355
         ssize_t ParseOneAccDataUnit(uint8_t* buf,ssize_t len);
 
         /**
-         * @brief parse all acc data in @param buf
+         * @brief parse all acc data in buf
          * 
          * @param buf 
          * @param len
@@ -444,14 +444,14 @@ namespace LRA_ADXL355
         ssize_t ParseAccData(uint8_t* buf,ssize_t len);
 
         /**
-         * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to @param buf
+         * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to buf
          * 
          * @return ssize_t
          */
         ssize_t readFifoDataOnce(uint8_t* buf);
 
         /**
-         * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to @param buf
+         * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to buf
          * 
          * @details test only -> maybe mess up FIFO order, if you want to get newest certain axis value. You should use readAccX instead 
          * @param buf 
@@ -464,7 +464,7 @@ namespace LRA_ADXL355
         /*uint8_t check buf start with x data(uint8_t* buf);problem*/
 
         /**
-         * @brief Set register at @param regaddr to value @param val with no writemask
+         * @brief Set register at regaddr to val with no writemask
          * 
          * @param regaddr 
          * @param val 
@@ -472,7 +472,7 @@ namespace LRA_ADXL355
         void setSingleReg(uint8_t regaddr,uint8_t val);
 
         /**
-         * @brief Set register at @param regaddr to value @param val with writemask @param mask
+         * @brief Set register at regaddr to val with writemask 
          * 
          * @param regaddr 
          * @param val 
@@ -481,7 +481,7 @@ namespace LRA_ADXL355
         void setSingleReg(uint8_t regaddr,uint8_t val,uint8_t mask);
 
         /**
-         * @brief Set single bit pair of @param regindex to value @param val
+         * @brief Set single bit pair of regindex to val
          * 
          * @details val is "a whole byte", not bit pair correspond value only, you need to locate correct value in correct place to form val. 
          *          Or use enum reg_val instead.
@@ -493,7 +493,7 @@ namespace LRA_ADXL355
         void setSingleBitPair(regIndex regindex,uint8_t val);
 
         /**
-         * @brief read reg value at @param regaddr to @param buf
+         * @brief read reg value at regaddr to buf
          * 
          * @param regaddr 
          * @param buf 
@@ -502,7 +502,7 @@ namespace LRA_ADXL355
         ssize_t readSingleByte(uint8_t regaddr,uint8_t* buf);
 
         /**
-         * @brief read temperature (12bits) to @param buf
+         * @brief read temperature (12bits) to buf
          * 
          * @param buf 
          * @return uint8_t 
@@ -510,7 +510,7 @@ namespace LRA_ADXL355
         uint8_t readTemp(void* buf);
 
         /**
-         * @brief read @param len  bytes or registers that start from @param regaddr  
+         * @brief read len  bytes or registers that start from regaddr  
          * 
          * @param regaddr 
          * @param buf 
