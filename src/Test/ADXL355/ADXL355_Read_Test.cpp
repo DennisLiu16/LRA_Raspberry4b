@@ -61,8 +61,40 @@ int main()
     // wiringPiSPIDataRW(0,tmp,sizeof(tmp));
     // printf("%d,%d,%d,%d,%d,%d,%d\n",tmp[0],tmp[1],tmp[2],tmp[3],tmp[4],tmp[5],tmp[10]);
 
-    // test setSingleBitPair - failed 
-    //adxl355.setSingleBitPair(ADXL355::regIndex::odr_lpf,(1<<4|1));   //should get 1<<4 instead
+    // test setSingleBitPair - ok after change read from wiringPiSPIDataRW();
+    // adxl355.setSingleBitPair(ADXL355::regIndex::hpf_corner,((1<<5)|1));   //should get 1<<5 not (1<<5|1) instead (write 80,32) to device in);
+    // adxl355.readSingleByte(static_cast<uint8_t>(ADXL355::Addr::FILTER),adxl355.buf);    //should get 32 in buf[1];
+    // printf("buf[1] = %d\n",adxl355.buf[1]);
+
+    // test FIFO
+        //adxl355.readSingleByte(adxl355.getAddr(adxl355.drdy_off),adxl355.buf);
+        //printf("buf[1] = %X\n",adxl355.buf[1]);
+        //check standby first -> should be 0 in measurement stage
+    adxl355.setSingleReg(adxl355.getAddr(adxl355.reset),0x52);
+    
+    adxl355.setSingleBitPair(adxl355.standby,0);
+    ADXL355::AccUnit accunit;
+    struct timespec t_required, t_remain;
+    t_required.tv_nsec = 100000L;
+    t_required.tv_sec = 0L;
+
+    while(1)
+    {
+        if(!(nanosleep(&t_required,&t_remain) < 0))
+        {
+            clock_gettime(CLOCK_REALTIME, &tt);
+            ssize_t getLen = adxl355.readMultiByte(adxl355.getAddr(adxl355.xdata3),adxl355.buf,ADXL355::LenDataSet);
+            adxl355.ParseOneAccDataUnit((adxl355.buf+1),getLen);
+            accunit = adxl355.dq_AccUnitData.front();
+            adxl355.dq_AccUnitData.pop_front();
+
+            double timestamp = (tt.tv_sec - startt.tv_sec)*1e6 + (tt.tv_nsec - startt.tv_nsec)/1e3;       
+            print("{:6.2f} (us) x = {:>8} , y = {:>8} , z = {:>8}\n",timestamp,accunit.intX,accunit.intY,accunit.intZ);
+        }
+    }
+    
+
+
     
 
 }
