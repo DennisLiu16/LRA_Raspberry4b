@@ -16,23 +16,8 @@ int main()
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
 
-    //int fd  = wiringPiSPISetupMode(0,(int)1e7,0);
-    //uint8_t tmp[2] = {(0x1e<<1)|0,0x15};
-    // while(true)
-    // {
-    //     wiringPiSPIDataRW(0,tmp,2);
-    //     printf("tmp = %d\n",tmp[1]);
-    // }
-    adxl355.setSingleReg(static_cast<uint8_t>(ADXL355::Addr::OFFSET_X_H),0x51);
-    
-    /*
-    
-    uint8_t tmp[1]={12};
-    adxl355.setSingleReg(0x2f,1);
-    ssize_t readlen = adxl355.readSingleByte(0x11,tmp);
-    printf("%ld,%d\n",readlen,tmp[0]);
 
-    */
+    
     /*
     while(true)
     {
@@ -60,4 +45,24 @@ int main()
         }
     }
     */
+
+   // test setSingleReg - ok 
+   //adxl355.setSingleReg(static_cast<uint8_t>(ADXL355::Addr::OFFSET_X_H),0x51);
+
+    // using wiringPiSPIDataRW write - ok 
+    // int fd  = wiringPiSPISetupMode(0,(int)1e7,0);
+    // uint8_t tmp[2] = {(0x1e<<0)|0,0x15};
+    // wiringPiSPIDataRW(0,tmp,2);
+
+    //try to read offset data - ok
+    //tmp need to add 1 byte because of delay
+    // int fd  = wiringPiSPISetupMode(0,(int)1e7,0);   //mode 0
+    // uint8_t tmp[11] = {((0x1e<<1)|1)};
+    // wiringPiSPIDataRW(0,tmp,sizeof(tmp));
+    // printf("%d,%d,%d,%d,%d,%d,%d\n",tmp[0],tmp[1],tmp[2],tmp[3],tmp[4],tmp[5],tmp[10]);
+
+    // test setSingleBitPair - failed 
+    //adxl355.setSingleBitPair(ADXL355::regIndex::odr_lpf,(1<<4|1));   //should get 1<<4 instead
+    
+
 }
