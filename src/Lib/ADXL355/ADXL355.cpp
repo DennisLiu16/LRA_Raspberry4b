@@ -6,6 +6,7 @@ ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_spe
     SPI_fd = wiringPiSPISetupMode(channel,speed,mode);
     if(SPI_fd > 0)
         print("open SPI successed\n");
+    ADXL355::channel = channel;
 }
 
 ADXL355::~ADXL355()
@@ -28,6 +29,20 @@ inline uint8_t ADXL355::getLength(regIndex bIndex)
     return static_cast<uint8_t>(length[bIndex]);
 }
 
+// setting functions 
+void ADXL355::resetThisAdxl355()
+{
+    setSingleReg(getAddr(reset),0x52);  //from data sheet
+    print("System reset finished \n");
+}
+
+// basic functions
+bool ADXL355::getStandByState()
+{
+    readSingleByte(getAddr(standby),buf);
+}
+
+
 ssize_t ADXL355::readSingleByte(uint8_t regaddr, uint8_t* buf)
 {
     return readMultiByte(regaddr,buf,1);
@@ -39,9 +54,16 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, uint8_t* buf,ssize_t len)
     if(len <= RW::RWByteMax)
     {
         uint8_t rcmd = (regaddr << 1) | READ;
+        *buf = rcmd;
+        int ret = wiringPiSPIDataRW(channel,buf,len+1);
+        if(ret > 0)
+            return ret-1;
+        /*
         ssize_t ret = write(SPI_fd,&rcmd,1);
         if(ret > 0)
             return read(SPI_fd,buf,len);
+
+        */
 
         /*something bad happen*/
         print("write readMultiByte rcmd failed\n");
@@ -83,13 +105,13 @@ ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf, ssize_t len)
         // so if the int (32bits, data length 20 bits) larger than (1<<19 == 0x80000), we should covert to it's two complement
 
         if(MyAccUnit.intX >= (1<<19))
-            MyAccUnit.intX = ~MyAccUnit.intX + 1;
+            MyAccUnit.intX = (~MyAccUnit.intX + 1) & GETMASK(20,0);
         
         if(MyAccUnit.intY >= (1<<19))
-            MyAccUnit.intY = ~MyAccUnit.intY + 1;
+            MyAccUnit.intY = (~MyAccUnit.intY + 1) & GETMASK(20,0);
 
         if(MyAccUnit.intZ >= (1<<19))
-            MyAccUnit.intZ = ~MyAccUnit.intZ + 1;
+            MyAccUnit.intZ = (~MyAccUnit.intZ + 1) & GETMASK(20,0);
 
         // add AccUnit to public dqueue
         dq_AccUnitData.push_back(MyAccUnit);
@@ -160,41 +182,41 @@ void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val)
     uint8_t wcmd = (regaddr << 1) | WRITE;
     uint8_t w_single_byte[2] = {wcmd,val};
 
-    write(SPI_fd,w_single_byte,2);//maybe two byte
+    write(SPI_fd,w_single_byte,2);
 }
 
 void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
 {
     /*writemask for where to write -> 1*/
-    uint8_t ret = readSingleByte(SPI_fd,r_single_byte);
-    if(ret == 0)
+    ssize_t ret = readSingleByte(SPI_fd,buf);
+    if(ret < 1)
     {
         print("set with mask input failed -- read \n");
         return;
     }
-    *r_single_byte &= (~writemask);
-    *r_single_byte|=(val & writemask);    //should be ok
+    *buf &= (~writemask);                   // buf[0]
+    *buf|=(val & writemask);    //should be ok
 
     uint8_t wcmd = (regaddr << 1) | WRITE;
-    uint8_t w_single_byte[2] = {wcmd,*r_single_byte};
+    uint8_t w_single_byte[2] = {wcmd,*buf};
 
-    write(SPI_fd,w_single_byte,2);//maybe two byte
+    write(SPI_fd,w_single_byte,2);
 }
 
 void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 {
     uint8_t regaddr = getAddr(ri);
-    ssize_t ret = readSingleByte(SPI_fd,r_single_byte);
+    ssize_t ret = readSingleByte(SPI_fd,buf);
     if(ret == 0)
     {
         print("set single bit pair failed -- read \n");
         return;
     }
 
-    *r_single_byte &= (~GETMASK(getLength(ri),getStartBit(ri)));    //  make readmask of origin reg, apply on r_single_byte
-    *r_single_byte |= (val & GETMASK(getLength(ri),getStartBit(ri)));   // make writemask of val, apply on val then combine (r_single_byte, val)
+    *buf &= (~GETMASK(getLength(ri),getStartBit(ri)));    //  make readmask of origin reg, apply on buf[0]
+    *buf |= (val & GETMASK(getLength(ri),getStartBit(ri)));   // make writemask of val, apply on val then combine (buf[0], val)
     uint8_t wcmd = (regaddr << 1) | WRITE;
-    uint8_t w_single_byte[2] = {wcmd,*r_single_byte};
+    uint8_t w_single_byte[2] = {wcmd,*buf};
 
     write(SPI_fd,w_single_byte,2);//maybe two byte
 }

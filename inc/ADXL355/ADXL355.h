@@ -46,14 +46,19 @@ namespace LRA_ADXL355
     class ADXL355{
         public:
         int SPI_fd = 0;
-        uint8_t* r_single_byte; 
+        int channel = 0;
+        uint8_t buf[4096] = {0};
+        uint8_t* readptr = buf+1;
+        //uint8_t* r_single_byte; 
+
         typedef struct{
             double timestamp;
             int intX;
             int intY;
             int intZ;
         }AccUnit;
-        AccUnit MyAccUnit;
+
+        
         deque<AccUnit> dq_AccUnitData;
         
 
@@ -61,7 +66,7 @@ namespace LRA_ADXL355
             READ = 1,
             WRITE = 0,
 
-            RWByteMax = 4096,
+            RWByteMax = 4095,
         };
 
         enum AccDataMarker{
@@ -417,7 +422,6 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        public:
         ADXL355(int channel, int speed,int mode);   // channel is CE pin index
         ~ADXL355();
 
@@ -519,7 +523,6 @@ namespace LRA_ADXL355
          */
         ssize_t readMultiByte(uint8_t regaddr,uint8_t* buf, ssize_t len);
 
-        protected:
         /**
          * @brief if len > 3, check buf[2] data marker.
          * 
@@ -530,23 +533,24 @@ namespace LRA_ADXL355
          */
         AccDataMarker CheckDataMarker(uint8_t* buf, ssize_t len);
 
-        /**
-         * @brief ?? 
-         * 
-         * @param regaddr 
-         * @param len // bit operation
-         * @return uint8_t 
-         */
-        uint8_t getWholeRegWriteMask(uint8_t regaddr,uint8_t len);
+        //setting related
 
         /**
-         * @brief ??
+         * @brief soft reset this ADXL355 instance
          * 
-         * @param regaddr 
-         * @param len 
-         * @return uint8_t 
+         * @return * void 
          */
-        uint8_t getWholeRegReadMask(uint8_t regaddr,uint8_t len);
+        void resetThisAdxl355();
+
+        /**
+         * @brief Get the Stand By State object
+         * 
+         * @return true , in standby(low power mode)
+         * @return false, in measure(high power mode)
+         */
+        bool getStandByState();
+
+        void setStandBy();
         
         /*Bit function*/
         /**
@@ -572,6 +576,17 @@ namespace LRA_ADXL355
          * @return uint8_t bit pair reg addr
          */
         uint8_t getAddr(regIndex bIndex);
+
+        /**
+         * @brief use uint8_t index to get addr
+         * 
+         * @param uIndex 
+         * @return uint8_t 
+         */
+        //uint8_t getAddr(uint8_t uIndex);
+
+        protected:
+        AccUnit MyAccUnit;
     };
 }
 #endif
