@@ -15,5 +15,6 @@ set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
 
 # add_sub_directories , remember add CMakeList.txt
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
+add_subdirectory(${PROJECT_SOURCE_DIR}/test)
 
 

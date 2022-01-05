@@ -11,20 +11,22 @@ int main()
     struct timespec startt;
     clock_gettime(CLOCK_REALTIME, &startt);
 
-    clock_getres(CLOCK_REALTIME, &tt);
-    print("resolution: {}\n", tt.tv_nsec);
-
-    int fd  = wiringPiSPISetupMode(0,(int)1e5,0);
-    uint8_t tmp[1] = {(1<<1)|1};
-    while(true)
-    {
-        wiringPiSPIDataRW(0,tmp,1);
-        printf("tmp = %d\n",tmp[0]);
-    }
-
-
-    /*
     ADXL355 adxl355(ADXL355::Default::spi_channel,ADXL355::Default::spi_speed,ADXL355::Default::spi_mode);
+
+    clock_getres(CLOCK_REALTIME, &tt);
+    print("clock resolution: {} ns\n", tt.tv_nsec);
+
+    //int fd  = wiringPiSPISetupMode(0,(int)1e7,0);
+    //uint8_t tmp[2] = {(0x1e<<1)|0,0x15};
+    // while(true)
+    // {
+    //     wiringPiSPIDataRW(0,tmp,2);
+    //     printf("tmp = %d\n",tmp[1]);
+    // }
+    adxl355.setSingleReg(static_cast<uint8_t>(ADXL355::Addr::OFFSET_X_H),0x51);
+    
+    /*
+    
     uint8_t tmp[1]={12};
     adxl355.setSingleReg(0x2f,1);
     ssize_t readlen = adxl355.readSingleByte(0x11,tmp);
