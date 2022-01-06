@@ -101,27 +101,27 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
     return 0;
 }
 
-ssize_t ADXL355::ParseAccData(ssize_t len)
+ssize_t ADXL355::PreParseAccData(ssize_t len)
 {
     
     //buf input should follow -> x data start, data set (9 bytes) as unit, so you need preprocess first 
     
     assert((len >= LenDataSet) && (len % LenDataSet == 0));
-    assert((buf[XDataMarkerPos] & 0b00000011) == AccDataMarker::isX);
+    assert((buf[XDataMarkerPos+1] & 0b00000011) == AccDataMarker::isX );
 
     int NumAccUnitParse = 0;
 
     for(int ind = 0 ; ind < len ; ind += LenDataSet)
     {
-        NumAccUnitParse += ParseOneAccDataUnit(buf+ind,LenDataSet);
+        NumAccUnitParse += PreParseOneAccDataUnit(buf+ind,LenDataSet);
     }
 
     return NumAccUnitParse;
 }
 
-ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf, ssize_t len)
+ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
 {
-    //there is still timestamp problem
+    //tiem stamp should add 
 
 
     try
@@ -200,7 +200,6 @@ ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf, ssize_t len)
 ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 {
     // FIFO_DATA at 0x11
-    // read out will be x1 x2 x3
     ssize_t ret = readMultiByte(0x11, LenDataAxis);
 
     if(ret > 0)
@@ -219,7 +218,6 @@ ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
 {
     // FIFO_DATA at 0x11
-    // read out will be x1 x2 x3 y1 y2 y3 z1 z2 z3
     ssize_t ret = readMultiByte(0x11, LenDataSet);
 
     if(ret > 0)
@@ -312,7 +310,7 @@ void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 
 uint8_t ADXL355::getSingleBitPair(regIndex ri)
 {
-
+    return *readBufPtr;
 }
 
 

@@ -49,11 +49,13 @@ namespace LRA_ADXL355
         int SPI_fd = 0;
         int channel = 0;
         uint8_t buf[4096] = {0};
-        uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
+
+        // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
+        const uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
 
 
         typedef struct{
-            double timestamp;
+            timespec timestamp;
             int intX;
             int intY;
             int intZ;
@@ -432,22 +434,22 @@ namespace LRA_ADXL355
         /*Bit Operation related*/
 
         /**
-         * @brief parse one acc data set (9 bytes) in buf
+         * @brief preparse one acc data set (9 bytes) in buf into int
          * 
          * @param buf 
          * @param len
          * @return ssize_t, true if parse successfully, or return false
          */
-        ssize_t ParseOneAccDataUnit(uint8_t* buf,ssize_t len);
+        ssize_t PreParseOneAccDataUnit(const uint8_t* buf,ssize_t len);
 
         /**
-         * @brief parse all acc data in buf
+         * @brief preparse all acc data in buf into int
          * 
          * @param buf 
          * @param len
          * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
          */
-        ssize_t ParseAccData(ssize_t len);
+        ssize_t PreParseAccData(ssize_t len);
 
         /**
          * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to buf
