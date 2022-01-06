@@ -101,6 +101,17 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
     return 0;
 }
 
+ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
+{
+    // (2^20/2) == 524288 == adc_num
+    _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
+    _faccUnit->fX = ((float)_accUnit->intX) / adc_num * measureRange; 
+    _faccUnit->fY = ((float)_accUnit->intY) / adc_num * measureRange; 
+    _faccUnit->fZ = ((float)_accUnit->intZ) / adc_num * measureRange; 
+
+    return 1;
+}
+
 ssize_t ADXL355::PreParseAccData(ssize_t len)
 {
     

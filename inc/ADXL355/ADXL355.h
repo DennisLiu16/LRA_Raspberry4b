@@ -48,6 +48,7 @@ namespace LRA_ADXL355
         public:
         int SPI_fd = 0;
         int channel = 0;
+        float measureRange = 4.196; //+- 2.048g in default
         uint8_t buf[4096] = {0};
 
         // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
@@ -61,7 +62,13 @@ namespace LRA_ADXL355
             int intZ;
         }AccUnit;
 
-        
+        typedef struct{
+            double time_ms;
+            float fX;
+            float fY;
+            float fZ;
+        }fAccUnit;
+
         deque<AccUnit> dq_AccUnitData;
         
 
@@ -90,7 +97,9 @@ namespace LRA_ADXL355
         enum Default{
             spi_speed = 10000000,
             spi_channel = 0,    //CE number
-            spi_mode = 0    //from datasheet
+            spi_mode = 0,    //from datasheet
+
+            adc_num = 1048576, // (2^20)
         };
 
         enum regIndex{
@@ -450,6 +459,15 @@ namespace LRA_ADXL355
          * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
          */
         ssize_t PreParseAccData(ssize_t len);
+
+        /**
+         * @brief 
+         * 
+         * @param _accUnit 
+         * @param _faccUnit 
+         * @return ssize_t 
+         */
+        ssize_t ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit);
 
         /**
          * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to buf
