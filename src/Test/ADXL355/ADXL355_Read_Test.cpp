@@ -70,6 +70,7 @@ int main()
         //adxl355.readSingleByte(adxl355.getAddr(adxl355.drdy_off),adxl355.buf);
         //printf("buf[1] = %X\n",adxl355.buf[1]);
         //check standby first -> should be 0 in measurement stage
+
     adxl355.setSingleReg(adxl355.getAddr(adxl355.reset),0x52);
     
     adxl355.setSingleBitPair(adxl355.standby,0);
@@ -78,13 +79,17 @@ int main()
     t_required.tv_nsec = 100000L;
     t_required.tv_sec = 0L;
 
+    print("partid is {}\n",adxl355.getPartID());
+    // adxl355.readSingleByte(adxl355.getAddr(adxl355.partid));
+    // printf("partid is %d\n",*adxl355.readBufPtr);
+
     while(1)
     {
         if(!(nanosleep(&t_required,&t_remain) < 0))
         {
             clock_gettime(CLOCK_REALTIME, &tt);
-            ssize_t getLen = adxl355.readMultiByte(adxl355.getAddr(adxl355.xdata3),adxl355.buf,ADXL355::LenDataSet);
-            adxl355.ParseOneAccDataUnit((adxl355.buf+1),getLen);
+            ssize_t getLen = adxl355.readMultiByte(adxl355.getAddr(adxl355.xdata3),ADXL355::LenDataSet);
+            adxl355.ParseOneAccDataUnit((adxl355.readBufPtr),getLen);
             accunit = adxl355.dq_AccUnitData.front();
             adxl355.dq_AccUnitData.pop_front();
 
