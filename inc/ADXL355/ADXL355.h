@@ -48,8 +48,8 @@ namespace LRA_ADXL355
         int SPI_fd = 0;
         int channel = 0;
         uint8_t buf[4096] = {0};
-        uint8_t* readptr = buf+1;
-        //uint8_t* r_single_byte; 
+        uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
+
 
         typedef struct{
             double timestamp;
@@ -80,6 +80,7 @@ namespace LRA_ADXL355
 
             // length of acc data
             LenDataAxis= 3, // single axis
+            LenBitAxis = 20,
             LenDataSet = 9, // single acc unit
         };
         
@@ -445,14 +446,14 @@ namespace LRA_ADXL355
          * @param len
          * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
          */
-        ssize_t ParseAccData(uint8_t* buf,ssize_t len);
+        ssize_t ParseAccData(ssize_t len);
 
         /**
          * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to buf
          * 
          * @return ssize_t
          */
-        ssize_t readFifoDataOnce(uint8_t* buf);
+        ssize_t readFifoDataOnce();
 
         /**
          * @brief read accleration data set once, x y z total 9 bytes uint8_t should be read to buf
@@ -461,11 +462,7 @@ namespace LRA_ADXL355
          * @param buf 
          * @return ssize_t
          */
-        ssize_t readFifoDataSetOnce(uint8_t* buf);
-
-        /*uint8_t readFifoDataSetAll(uint8_t* buf);problem*/
-
-        /*uint8_t check buf start with x data(uint8_t* buf);problem*/
+        ssize_t readFifoDataSetOnce();
 
         /**
          * @brief Set register at regaddr to val with no writemask
@@ -497,13 +494,21 @@ namespace LRA_ADXL355
         void setSingleBitPair(regIndex regindex,uint8_t val);
 
         /**
+         * @brief get bit pair value in "correct position", that is at pos => startbit to (startbit + length) 
+         * 
+         * @param bIndex 
+         * @return uint8_t 
+         */
+        uint8_t getSingleBitPair(regIndex bIndex);
+
+        /**
          * @brief read reg value at regaddr to buf
          * 
          * @param regaddr 
          * @param buf 
          * @return ssize_t 
          */
-        ssize_t readSingleByte(uint8_t regaddr,uint8_t* buf);
+        ssize_t readSingleByte(uint8_t regaddr);
 
         /**
          * @brief read temperature (12bits) to buf
@@ -511,7 +516,7 @@ namespace LRA_ADXL355
          * @param buf 
          * @return uint8_t 
          */
-        uint8_t readTemp(void* buf);
+        uint8_t readTemp();
 
         /**
          * @brief read len  bytes or registers that start from regaddr  
@@ -521,7 +526,7 @@ namespace LRA_ADXL355
          * @param len 
          * @return ssize_t 
          */
-        ssize_t readMultiByte(uint8_t regaddr,uint8_t* buf, ssize_t len);
+        ssize_t readMultiByte(uint8_t regaddr, ssize_t len);
 
         /**
          * @brief if len > 3, check buf[2] data marker.
@@ -531,9 +536,9 @@ namespace LRA_ADXL355
          * @param buf 
          * @return AccDataMarker 
          */
-        AccDataMarker CheckDataMarker(uint8_t* buf, ssize_t len);
+        AccDataMarker CheckDataMarker(ssize_t len);
 
-        //setting related
+        //normal setting functions
 
         /**
          * @brief soft reset this ADXL355 instance
@@ -550,7 +555,26 @@ namespace LRA_ADXL355
          */
         bool getStandByState();
 
-        void setStandBy();
+        /**
+         * @brief set ADXL355 to standby mode(low power), stop any measurement
+         * 
+         */
+        void setStandByMode();
+
+        /**
+         * @brief set ADXL355 to measure mode(high power mode)
+         * 
+         */
+        void setMeasureMode();
+
+        /**
+         * @brief 
+         * 
+         * @return ssize_t 
+         */
+        uint8_t getPartID();
+
+
         
         /*Bit function*/
         /**
