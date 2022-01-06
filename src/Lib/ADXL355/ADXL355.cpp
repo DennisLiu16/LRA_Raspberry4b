@@ -239,7 +239,7 @@ ADXL355::AccDataMarker ADXL355::CheckDataMarker(ssize_t len)
 {
     if(len >= LenDataAxis)
     {
-        uint8_t DataMarker = buf[XDataMarkerPos] & /*0b00000011*/
+        uint8_t DataMarker = buf[XDataMarkerPos+1] & /*0b00000011*/
                             ( GETMASK(getLength(x_axis_marker),getStartBit(x_axis_marker)) |
                               GETMASK(getLength(empty_indicator),getStartBit(empty_indicator))
                             );
