@@ -27,7 +27,7 @@ int main()
 
         if(len > 0)
         {
-            len = adxl355.ParseOneAccDataUnit(tmp,len);
+            len = adxl355.PreParseOneAccDataUnit(tmp,len);
             ADXL355::AccUnit accunit;
             try
             {
@@ -75,8 +75,10 @@ int main()
     
     adxl355.setSingleBitPair(adxl355.standby,0);
     ADXL355::AccUnit accunit;
+    ADXL355::fAccUnit faccunit;
+
     struct timespec t_required, t_remain;
-    t_required.tv_nsec = 100000L;
+    t_required.tv_nsec = 0000L;
     t_required.tv_sec = 0L;
 
     print("partid is {}\n",adxl355.getPartID());
@@ -90,13 +92,17 @@ int main()
             clock_gettime(CLOCK_REALTIME, &tt);
             ssize_t getLen = adxl355.readFifoDataSetOnce(); // read with data ready
             //ssize_t getLen = adxl355.readMultiByte(adxl355.getAddr(adxl355.xdata3),ADXL355::LenDataSet);
-            adxl355.ParseOneAccDataUnit(adxl355.readBufPtr,getLen);
+            adxl355.PreParseOneAccDataUnit(adxl355.readBufPtr,getLen);
             accunit = adxl355.dq_AccUnitData.front();
             adxl355.dq_AccUnitData.pop_front();
-
-            double timestamp = (tt.tv_sec - startt.tv_sec)*1e6 + (tt.tv_nsec - startt.tv_nsec)/1e3;  
+            
+            timespec tmp = {.tv_sec = tt.tv_sec-startt.tv_sec,.tv_nsec = tt.tv_nsec-startt.tv_nsec};
+            accunit.timestamp = tmp;
+            
+            adxl355.ParseAccDataUnit(&accunit,&faccunit);
+            //double timestamp = (tt.tv_sec - startt.tv_sec)*1e6 + (tt.tv_nsec - startt.tv_nsec)/1e3;  
             //print("{:6.2f} (us)\n",timestamp);     // for time consumption test
-            print("{:6.2f} (us) x = {:>8} , y = {:>8} , z = {:>8}\n",timestamp,accunit.intX,accunit.intY,accunit.intZ);   //print out test
+            print("{:6.3f} (ms) x = {:6.3f} g, y = {:6.3f} g, z = {:6.3f} g\n",faccunit.time_ms,faccunit.fX,faccunit.fY,faccunit.fZ);   //print out test
         }
     }
     
