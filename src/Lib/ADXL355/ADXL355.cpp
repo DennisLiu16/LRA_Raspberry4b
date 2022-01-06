@@ -60,6 +60,11 @@ uint8_t ADXL355::getPartID()
     return *readBufPtr;
 }
 
+ssize_t ADXL355::getAllReg()
+{
+    //readMultiByte(getAddr(devid_ad),0x2f+1);
+}
+
 // basic functions
 ssize_t ADXL355::readSingleByte(uint8_t regaddr)
 {
@@ -73,14 +78,18 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
     {
         uint8_t rcmd = (regaddr << 1) | READ;
         *buf = rcmd;
+
+        // clean buf before send rcmd to prevent miswrite
+        
+
         int ret = wiringPiSPIDataRW(channel,buf,len+1);
         if(ret > 0)
             return ret-1;
         /*
-        ssize_t ret = write(SPI_fd,&rcmd,1);
-        if(ret > 0)
+        you can't separate write and read owing to SPI SCLK trigger mechanism
+            ssize_t ret = write(SPI_fd,&rcmd,1);
+            if(ret > 0)
             return read(SPI_fd,buf,len);
-
         */
 
         /*something bad happen*/
@@ -191,6 +200,7 @@ ssize_t ADXL355::ParseOneAccDataUnit(uint8_t* buf, ssize_t len)
 ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 {
     // FIFO_DATA at 0x11
+    // read out will be x1 x2 x3
     ssize_t ret = readMultiByte(0x11, LenDataAxis);
 
     if(ret > 0)
@@ -209,6 +219,7 @@ ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
 {
     // FIFO_DATA at 0x11
+    // read out will be x1 x2 x3 y1 y2 y3 z1 z2 z3
     ssize_t ret = readMultiByte(0x11, LenDataSet);
 
     if(ret > 0)

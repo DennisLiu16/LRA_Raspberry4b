@@ -1,6 +1,6 @@
 // using spi
-// several bit pair form a re
-// https://01.org/linuxgraphics/gfx-docs/drm/driver-api/spi.html - linux kernel interface
+// z axis down +
+
 #ifndef _LRA_ADXL355_H_
 #define _LRA_ADXL355_H_
 
@@ -11,6 +11,7 @@ extern "C" {
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 #include <signal.h>
+#include <time.h>
 }
 
 /* 
@@ -573,6 +574,13 @@ namespace LRA_ADXL355
          * @return ssize_t 
          */
         uint8_t getPartID();
+
+        /**
+         * @brief Get all registers val in buf
+         * 
+         * @return ssize_t 
+         */
+        ssize_t getAllReg();
 
 
         
