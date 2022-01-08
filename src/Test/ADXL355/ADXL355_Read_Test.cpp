@@ -78,7 +78,7 @@ int main()
     ADXL355::fAccUnit faccunit;
 
     struct timespec t_required, t_remain;
-    t_required.tv_nsec = 0000L;
+    t_required.tv_nsec = 1000L;
     t_required.tv_sec = 0L;
 
     print("partid is {}\n",adxl355.getPartID());
