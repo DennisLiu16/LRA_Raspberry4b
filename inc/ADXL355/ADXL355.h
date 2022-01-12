@@ -52,6 +52,7 @@ namespace LRA_ADXL355
         int channel = 0;
         float measureRange = 4.196; //+- 2.048g in default
         uint8_t buf[4096] = {0};
+        timespec adxl355_birth_time;
 
         // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
         const uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
@@ -86,9 +87,10 @@ namespace LRA_ADXL355
             Err_Len2Short = -1,
             isOther = 0,
             isX = 1,
-            isEmpty = 3,
+            isEmpty = 2,
     
             XDataMarkerPos = 2,
+            DataMarkerLen = 2,
 
             // length of acc data
             LenDataAxis= 3, // single axis

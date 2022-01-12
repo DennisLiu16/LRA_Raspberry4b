@@ -8,22 +8,28 @@ ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_spe
         print("open SPI successed\n");
     ADXL355::channel = channel;
 
-
     /*Init setting*/
+    clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
-    // get 
+    // get offset and set?
 
     //Thread para
     _updateThread = updateThread;
 
     if(_updateThread)
+    {
         std::thread(&ADXL355::_updateInBackground,this).detach();
+        _doMeasurement = 1;
+        _exitThread = 0;
+    }
+        
         
 }
 
 ADXL355::~ADXL355()
 {
     //pass
+    _exitThread = 0;
 }
 
 inline uint8_t ADXL355::getAddr(regIndex bIndex)
@@ -96,6 +102,30 @@ void ADXL355::_updateInBackground()
 {
     print("Start ADXL355 update in background\n");
 
+    /*init parameters*/
+    AccUnit _accunit;
+    fAccUnit _faccunit;
+
+    //test only
+    struct timespec t_required, t_remain;
+    t_required.tv_nsec = 1000L;
+    t_required.tv_sec = 0L;
+
+    /*update information*/
+    while(!_exitThread)
+    {
+        if(_doMeasurement)
+        //if(_doMeasurement && !(nanosleep(&t_required,&t_remain) < 0))
+        {
+            ssize_t _len = readFifoDataSetOnce();
+            PreParseOneAccDataUnit(readBufPtr,_len);
+
+            /*move this part to main thread*/
+            //ParseAccDataUnit(&_accunit,&_faccunit);
+            //print("{:6.3f} (ms) x = {:6.3f} g, y = {:6.3f} g, z = {:6.3f} g\n",_faccunit.time_ms,_faccunit.fX,_faccunit.fY,_faccunit.fZ);   //print out test
+        }
+        
+    }
     print("Leaving update thread\n");
 }
 
@@ -209,6 +239,9 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
                     MyAccUnit.intZ = (~MyAccUnit.intZ + 1);
             }
         */
+       // confirm data valid -- if you use polling not INT
+        if((buf[2] & GETMASK(DataMarkerLen,0)) == ADXL355::isEmpty)
+            return true;
         
         uint32_t uintX = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4) & GETMASK(LenBitAxis,0);    // shift and confirm only 0 to 19th bits meaningful
         uint32_t uintY = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4) & GETMASK(LenBitAxis,0);
@@ -229,7 +262,7 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
             MyAccUnit.intZ = (uintZ | ~GETMASK(LenBitAxis,0));  // should invert
         else
              MyAccUnit.intZ = uintZ;
-        
+
         // add AccUnit to public dqueue
         dq_push_back(MyAccUnit);
         //dq_AccUnitData.push_back(MyAccUnit);
@@ -263,6 +296,14 @@ ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 
 ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
 {
+    //update timestamp
+    timespec _t;
+    clock_gettime(CLOCK_REALTIME, &_t);
+    _t.tv_sec -= adxl355_birth_time.tv_sec;
+    _t.tv_nsec-= adxl355_birth_time.tv_nsec;
+
+    MyAccUnit.timestamp = _t;
+
     // FIFO_DATA at 0x11
     ssize_t ret = readMultiByte(0x11, LenDataSet);
 
@@ -291,7 +332,8 @@ ADXL355::AccDataMarker ADXL355::CheckDataMarker(ssize_t len)
         switch(DataMarker)
         {
             case isEmpty:
-                print("data get from reg_FIFO_DATA is invalid\n");
+                //print("data get from reg_FIFO_DATA is invalid\n");
+                //-->not print out
                 break;
 
             case Err_Len2Short:
