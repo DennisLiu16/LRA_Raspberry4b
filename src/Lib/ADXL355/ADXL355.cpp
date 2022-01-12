@@ -1,12 +1,24 @@
 #include <ADXL355/ADXL355.h>
 using namespace LRA_ADXL355;
 
-ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_speed,int mode = Default::spi_mode){
+ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_speed,int mode = Default::spi_mode,bool updateThread = 1){
     /*init spi*/
     SPI_fd = wiringPiSPISetupMode(channel,speed,mode);
     if(SPI_fd > 0)
         print("open SPI successed\n");
     ADXL355::channel = channel;
+
+
+    /*Init setting*/
+
+    // get 
+
+    //Thread para
+    _updateThread = updateThread;
+
+    if(_updateThread)
+        std::thread(&ADXL355::_updateInBackground,this).detach();
+        
 }
 
 ADXL355::~ADXL355()
@@ -63,6 +75,28 @@ uint8_t ADXL355::getPartID()
 ssize_t ADXL355::getAllReg()
 {
     //readMultiByte(getAddr(devid_ad),0x2f+1);
+}
+
+// thread functions
+void ADXL355::dq_push_back(const AccUnit _accunit)
+{
+    std::lock_guard<std::mutex> dq_push_back_lock(deque_mutex);
+    dq_AccUnitData.push_back(_accunit);
+}
+
+ADXL355::AccUnit ADXL355::dq_pop_front()
+{
+    std::lock_guard<std::mutex> dq_pop_front_lock(deque_mutex);
+    AccUnit _accunit = dq_AccUnitData.front();
+    dq_AccUnitData.pop_front();
+    return _accunit;
+}
+
+void ADXL355::_updateInBackground()
+{
+    print("Start ADXL355 update in background\n");
+
+    print("Leaving update thread\n");
 }
 
 // basic functions
@@ -197,7 +231,8 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
              MyAccUnit.intZ = uintZ;
         
         // add AccUnit to public dqueue
-        dq_AccUnitData.push_back(MyAccUnit);
+        dq_push_back(MyAccUnit);
+        //dq_AccUnitData.push_back(MyAccUnit);
 
         return true;    // 1 accDataUnit parse successfully
     }

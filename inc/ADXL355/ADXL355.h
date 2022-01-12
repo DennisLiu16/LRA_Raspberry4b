@@ -7,6 +7,8 @@
 #include <PI/LRA_PI_Util.h>
 #include <ErrorCode/LRA_ErrorCode.h>
 #include <deque>
+#include <thread>
+#include <mutex>
 extern "C" {
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -435,12 +437,32 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        ADXL355(int channel, int speed,int mode);   // channel is CE pin index
+        ADXL355(int channel, int speed,int mode,bool updateThread);   // channel is CE pin index
         ~ADXL355();
 
         /*Setting related*/
 
+        /*Thread safe related*/
+
+        void _updateInBackground();
+
+        /**
+         * @brief deque push back for thread safe
+         * 
+         * @param _accunit 
+         */
+        void dq_push_back(const AccUnit _accunit);
+
+        /**
+         * @brief deque pop front for thread safe, get and rm at same time
+         * 
+         * @return AccUnit 
+         */
+        AccUnit dq_pop_front();
+
         /*Bit Operation related*/
+
+        
 
         /**
          * @brief preparse one acc data set (9 bytes) in buf into int
@@ -639,6 +661,10 @@ namespace LRA_ADXL355
 
         protected:
         AccUnit MyAccUnit;
+        bool _updateThread = 0;
+        bool _exitThread = 0;
+        bool _doMeasurement = 0;
+        std::mutex deque_mutex;
     };
 }
 #endif
