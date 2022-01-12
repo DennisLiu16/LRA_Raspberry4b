@@ -11,13 +11,11 @@ int main()
     struct timespec startt;
     clock_gettime(CLOCK_REALTIME, &startt);
 
-    ADXL355 adxl355(ADXL355::Default::spi_channel,ADXL355::Default::spi_speed,ADXL355::Default::spi_mode);
+    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,1);
 
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
 
-
-    
     /*
     while(true)
     {
@@ -71,9 +69,11 @@ int main()
         //printf("buf[1] = %X\n",adxl355.buf[1]);
         //check standby first -> should be 0 in measurement stage
 
-    adxl355.setSingleReg(adxl355.getAddr(adxl355.reset),0x52);
-    
-    adxl355.setSingleBitPair(adxl355.standby,0);
+    //adxl355.setSingleReg(adxl355.getAddr(adxl355.reset),0x52);
+    adxl355.resetThisAdxl355();
+    //adxl355.setSingleBitPair(adxl355.standby,0);
+    adxl355.setMeasureMode();
+
     ADXL355::AccUnit accunit;
     ADXL355::fAccUnit faccunit;
 
@@ -84,7 +84,7 @@ int main()
     print("partid is {}\n",adxl355.getPartID());
     // adxl355.readSingleByte(adxl355.getAddr(adxl355.partid));
     // printf("partid is %d\n",*adxl355.readBufPtr);
-
+    /*
     while(1)
     {
         if(!(nanosleep(&t_required,&t_remain) < 0))
@@ -105,6 +105,8 @@ int main()
             print("{:6.3f} (ms) x = {:6.3f} g, y = {:6.3f} g, z = {:6.3f} g\n",faccunit.time_ms,faccunit.fX,faccunit.fY,faccunit.fZ);   //print out test
         }
     }
+    */
+   
     
 
 
