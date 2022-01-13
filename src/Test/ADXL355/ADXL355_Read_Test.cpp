@@ -25,7 +25,7 @@ int main()
     double last_record_time = 0.0;
 
     print("partid is {}\n",adxl355.getPartID());
-    long index = 0;
+
     while(1)
     {
 
@@ -51,12 +51,10 @@ int main()
             */
             double ptime = now - faccunit.time_ms;
             if(ptime > 0.1)
-                print("index : {} | delay time : {:6.3f}\n", index, ptime);
+                print("time : {:6.3f} | delay time (ms): {:6.3f}\n", now, ptime);
             
             // assign last val
             last_record_time = faccunit.time_ms;
-
-            ++index;
         }
     }
 
