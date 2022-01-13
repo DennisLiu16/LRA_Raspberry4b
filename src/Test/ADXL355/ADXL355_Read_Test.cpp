@@ -11,7 +11,7 @@ int main()
     struct timespec startt;
     clock_gettime(CLOCK_REALTIME, &startt);
 
-    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,1);
+    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::polling_update_mode);
 
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
@@ -76,12 +76,15 @@ int main()
 
     ADXL355::AccUnit accunit;
     ADXL355::fAccUnit faccunit;
-
     struct timespec t_required, t_remain,t_main;
+    double last_record_time = 0.0;
+
+    //nano sleep setting
     t_required.tv_nsec = 500L;
     t_required.tv_sec = 0L;
 
     print("partid is {}\n",adxl355.getPartID());
+
     while(1)
     {
         if(!adxl355.dq_AccUnitData.empty())
@@ -91,9 +94,18 @@ int main()
             clock_gettime(CLOCK_REALTIME, &t_main);
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
-            print("now : {:6.3f}  (ms) |  record_time : {:6.3f} (ms)   |   x = {:6.3f} g    |    y = {:6.3f} g    |    z = {:6.3f} g\n"
-                  ,now,faccunit.time_ms,faccunit.fX,faccunit.fY,faccunit.fZ
+            print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g\n",
+                  now,
+                  faccunit.time_ms,
+                  now - faccunit.time_ms,
+                  faccunit.time_ms - last_record_time,
+                  faccunit.fX,
+                  faccunit.fY,
+                  faccunit.fZ
                   );   //print out test
+                
+            // assign last val
+            last_record_time = faccunit.time_ms;
         }
     }
 

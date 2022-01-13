@@ -50,7 +50,7 @@ namespace LRA_ADXL355
         public:
         int SPI_fd = 0;
         int channel = 0;
-        float measureRange = 4.196; //+- 2.048g in default
+        float measureRange = 4.196; //+- 2.048g in default --> change to getRange later
         uint8_t buf[4096] = {0};
         timespec adxl355_birth_time;
 
@@ -76,8 +76,8 @@ namespace LRA_ADXL355
         
 
         enum RW{
-            READ = 1,
             WRITE = 0,
+            READ = 1,
 
             RWByteMax = 4095,
         };
@@ -94,8 +94,9 @@ namespace LRA_ADXL355
 
             // length of acc data
             LenDataAxis= 3, // single axis
-            LenBitAxis = 20,
             LenDataSet = 9, // single acc unit
+            LenBitAxis = 20,
+
         };
         
         enum Default{
@@ -103,6 +104,10 @@ namespace LRA_ADXL355
             spi_channel = 0,    //CE number
             spi_mode = 0,    //from datasheet
 
+            open_updateThread = 1,
+
+            polling_update_mode = 0,
+            INT_update_mode = 1,
             adc_num = 1048576, // (2^20)
         };
 
@@ -439,7 +444,7 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        ADXL355(int channel, int speed,int mode,bool updateThread);   // channel is CE pin index
+        ADXL355(int channel, int speed,int mode,bool updateThread,bool updateMode);   // channel is CE pin index
         ~ADXL355();
 
         /*Setting related*/
@@ -666,6 +671,8 @@ namespace LRA_ADXL355
         bool _updateThread = 0;
         bool _exitThread = 0;
         bool _doMeasurement = 0;
+        bool _updateMode = 0;
+        volatile bool _fifoINTRdyFlag = 0;
         std::mutex deque_mutex;
     };
 }

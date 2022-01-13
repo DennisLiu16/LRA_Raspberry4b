@@ -1,21 +1,33 @@
 #include <ADXL355/ADXL355.h>
 using namespace LRA_ADXL355;
 
-ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_speed,int mode = Default::spi_mode,bool updateThread = 1){
+ADXL355::ADXL355(int channel = Default::spi_channel,
+                 int speed = Default::spi_speed,
+                 int mode = Default::spi_mode,
+                 bool updateThread = Default::open_updateThread,
+                 bool updateMode = Default::polling_update_mode
+                 )
+    {
     /*init spi*/
     SPI_fd = wiringPiSPISetupMode(channel,speed,mode);
     if(SPI_fd > 0)
         print("open SPI successed\n");
+
     ADXL355::channel = channel;
+    _updateMode = updateMode;
+    _updateThread = updateThread;
 
     /*Init setting*/
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
+    if(_updateMode == INT_update_mode)
+    {
+        /*You should set your interrupt pin here or before thread initial*/
+    }
+
     // get offset and set?
 
     //Thread para
-    _updateThread = updateThread;
-
     if(_updateThread)
     {
         _doMeasurement = 1;
@@ -115,11 +127,14 @@ void ADXL355::_updateInBackground()
     while(!_exitThread)
     {
         if(_doMeasurement)
-        //if(_doMeasurement && !(nanosleep(&t_required,&t_remain) < 0))
-        {
-            ssize_t _len = readFifoDataSetOnce();
-            PreParseOneAccDataUnit(readBufPtr,_len);
 
+        {
+            if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
+            {
+                ssize_t _len = readFifoDataSetOnce();
+                PreParseOneAccDataUnit(readBufPtr,_len);
+            }
+            
             /*move this part to main thread*/
             //ParseAccDataUnit(&_accunit,&_faccunit);
             //print("{:6.3f} (ms) x = {:6.3f} g, y = {:6.3f} g, z = {:6.3f} g\n",_faccunit.time_ms,_faccunit.fX,_faccunit.fY,_faccunit.fZ);   //print out test
@@ -240,13 +255,9 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
             }
         */
         // confirm data valid -- if you use polling not INT
-       uint8_t datamarker = buf[2] & GETMASK(DataMarkerLen,0);
-        if(datamarker == ADXL355::isEmpty)
-            return true;
-        
+        uint8_t datamarker = (buf[2] | buf[5] | buf[8]) & GETMASK(DataMarkerLen,0);
         if(datamarker != ADXL355::isX)
-            print("error data marker is {}\n",datamarker);
-        
+            return true;
         
         uint32_t uintX = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4) & GETMASK(LenBitAxis,0);    // shift and confirm only 0 to 19th bits meaningful
         uint32_t uintY = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4) & GETMASK(LenBitAxis,0);
