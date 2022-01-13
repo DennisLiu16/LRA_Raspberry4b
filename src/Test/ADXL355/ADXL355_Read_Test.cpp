@@ -87,13 +87,17 @@ int main()
 
     while(1)
     {
+        timespec test1;
+        timespec test2;
         if(!adxl355.dq_AccUnitData.empty())
         {
             accunit = adxl355.dq_pop_front();
             adxl355.ParseAccDataUnit(&accunit,&faccunit);
             clock_gettime(CLOCK_REALTIME, &t_main);
+            
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
+            
             print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g\n",
                   now,
                   faccunit.time_ms,
@@ -103,7 +107,7 @@ int main()
                   faccunit.fY,
                   faccunit.fZ
                   );   //print out test
-                
+            
             // assign last val
             last_record_time = faccunit.time_ms;
         }
