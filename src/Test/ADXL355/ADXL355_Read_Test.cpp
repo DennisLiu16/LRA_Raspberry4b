@@ -25,7 +25,7 @@ int main()
     double last_record_time = 0.0;
 
     print("partid is {}\n",adxl355.getPartID());
-
+    long index = 0;
     while(1)
     {
 
@@ -37,7 +37,7 @@ int main()
             
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
-            
+            /*
             print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                   now,
                   faccunit.time_ms,
@@ -48,9 +48,15 @@ int main()
                   faccunit.fZ,
                   adxl355.dq_AccUnitData.size()
                   );   //print out test
+            */
+            double ptime = now - faccunit.time_ms;
+            if(ptime > 0.1)
+                print("index : {} | delay time : {:6.3f}\n", index, ptime);
             
             // assign last val
             last_record_time = faccunit.time_ms;
+
+            ++index;
         }
     }
 
