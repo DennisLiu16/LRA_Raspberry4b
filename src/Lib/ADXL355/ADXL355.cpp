@@ -18,9 +18,9 @@ ADXL355::ADXL355(int channel = Default::spi_channel,int speed = Default::spi_spe
 
     if(_updateThread)
     {
-        std::thread(&ADXL355::_updateInBackground,this).detach();
         _doMeasurement = 1;
         _exitThread = 0;
+        std::thread(&ADXL355::_updateInBackground,this).detach();
     }
         
         
@@ -239,9 +239,14 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
                     MyAccUnit.intZ = (~MyAccUnit.intZ + 1);
             }
         */
-       // confirm data valid -- if you use polling not INT
-        if((buf[2] & GETMASK(DataMarkerLen,0)) == ADXL355::isEmpty)
+        // confirm data valid -- if you use polling not INT
+       uint8_t datamarker = buf[2] & GETMASK(DataMarkerLen,0);
+        if(datamarker == ADXL355::isEmpty)
             return true;
+        
+        if(datamarker != ADXL355::isX)
+            print("error data marker is {}\n",datamarker);
+        
         
         uint32_t uintX = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4) & GETMASK(LenBitAxis,0);    // shift and confirm only 0 to 19th bits meaningful
         uint32_t uintY = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4) & GETMASK(LenBitAxis,0);
