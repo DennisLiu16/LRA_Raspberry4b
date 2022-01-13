@@ -38,14 +38,15 @@ int main()
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
             
-            print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g\n",
+            print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                   now,
                   faccunit.time_ms,
                   now - faccunit.time_ms,
                   faccunit.time_ms - last_record_time,
                   faccunit.fX,
                   faccunit.fY,
-                  faccunit.fZ
+                  faccunit.fZ,
+                  adxl355.dq_AccUnitData.size()
                   );   //print out test
             
             // assign last val
