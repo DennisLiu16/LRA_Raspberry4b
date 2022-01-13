@@ -15,24 +15,17 @@ int main()
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
 
-    adxl355.resetThisAdxl355();
-
-    adxl355.setMeasureMode();
-
     ADXL355::AccUnit accunit;
     ADXL355::fAccUnit faccunit;
     struct timespec t_required, t_remain,t_main;
     double last_record_time = 0.0;
 
-    print("partid is {}\n",adxl355.getPartID());
-
     while(1)
     {
-
-        if(!adxl355.dq_AccUnitData.empty())
+        
+        if(!adxl355.dq_fAccUnitData.empty())
         {
-            accunit = adxl355.dq_pop_front();
-            adxl355.ParseAccDataUnit(&accunit,&faccunit);
+            faccunit = adxl355.dq_pop_front();
             clock_gettime(CLOCK_REALTIME, &t_main);
             
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
@@ -49,14 +42,15 @@ int main()
                   adxl355.dq_AccUnitData.size()
                   );   //print out test
             */
+            
             double ptime = now - faccunit.time_ms;
-            if(ptime > 0.1)
-                print("time : {:6.3f} | delay time (ms): {:6.3f}\n", now, ptime);
+            if(ptime > 2.0)
+                print("print time (ms): {:6.3f} | delay time (ms): {:6.3f} | x (g): {:6.3f} | y (g): {:6.3f} | z (g): {:6.3f} \n", now, ptime,faccunit.fX,faccunit.fY,faccunit.fZ);
             
             // assign last val
             last_record_time = faccunit.time_ms;
         }
+        
     }
-
     print("Leaving ADXL main thread\n");
 }

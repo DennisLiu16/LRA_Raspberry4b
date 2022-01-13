@@ -20,17 +20,20 @@ ADXL355::ADXL355(int channel = Default::spi_channel,
     /*Init setting*/
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
+    resetThisAdxl355();
+    print("partid is {}\n",getPartID());
+    setMeasureMode();
+
     if(_updateMode == INT_update_mode)
     {
         /*You should set your interrupt pin here or before thread initial*/
     }
 
-    // get offset and set?
+    // get offset and set
 
     //Thread para
     if(_updateThread)
     {
-        _doMeasurement = 1;
         _exitThread = 0;
         std::thread(&ADXL355::_updateInBackground,this).detach();
     }
@@ -41,7 +44,7 @@ ADXL355::ADXL355(int channel = Default::spi_channel,
 ADXL355::~ADXL355()
 {
     //pass
-    _exitThread = 0;
+    _exitThread = 1;
 }
 
 inline uint8_t ADXL355::getAddr(regIndex bIndex)
@@ -76,11 +79,13 @@ bool ADXL355::getStandByState()
 
 void ADXL355::setStandByMode()
 {
+    _doMeasurement = 0;
     setSingleBitPair(standby,1);
 }
 
 void ADXL355::setMeasureMode()
 {
+    _doMeasurement = 1;
     setSingleBitPair(standby,0);
 }
 
@@ -96,18 +101,18 @@ ssize_t ADXL355::getAllReg()
 }
 
 // thread functions
-void ADXL355::dq_push_back(const AccUnit _accunit)
+void ADXL355::dq_push_back(const fAccUnit _faccunit)
 {
     std::lock_guard<std::mutex> dq_push_back_lock(deque_mutex);
-    dq_AccUnitData.push_back(_accunit);
+    dq_fAccUnitData.push_back(_faccunit);
 }
 
-ADXL355::AccUnit ADXL355::dq_pop_front()
+ADXL355::fAccUnit ADXL355::dq_pop_front()
 {
     std::lock_guard<std::mutex> dq_pop_front_lock(deque_mutex);
-    AccUnit _accunit = dq_AccUnitData.front();
-    dq_AccUnitData.pop_front();
-    return _accunit;
+    fAccUnit _faccunit = dq_fAccUnitData.front();
+    dq_fAccUnitData.pop_front();
+    return _faccunit;
 }
 
 void ADXL355::_updateInBackground()
@@ -177,7 +182,7 @@ ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
     _faccUnit->fY = ((float)_accUnit->intY) / adc_num * measureRange; 
     _faccUnit->fZ = ((float)_accUnit->intZ) / adc_num * measureRange; 
 
-    return 1;
+    return true;
 }
 
 ssize_t ADXL355::PreParseAccData(ssize_t len)
@@ -224,23 +229,23 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
             
             @Wrong Method:
             {
-                MyAccUnit.intX = (buf[0] << 12) + (buf[1] << 4) + (buf[2] >> 4);
-                MyAccUnit.intY = (buf[3] << 12) + (buf[4] << 4) + (buf[5] >> 4);
-                MyAccUnit.intZ = (buf[6] << 12) + (buf[7] << 4) + (buf[8] >> 4);    
+                _MyAccUnit.intX = (buf[0] << 12) + (buf[1] << 4) + (buf[2] >> 4);
+                _MyAccUnit.intY = (buf[3] << 12) + (buf[4] << 4) + (buf[5] >> 4);
+                _MyAccUnit.intZ = (buf[6] << 12) + (buf[7] << 4) + (buf[8] >> 4);    
 
                 // data form with two complement
                 // so if the int (32bits, data length 20 bits) larger than (1<<19 == 0x80000 == 524288), we should covert to it's two complement
 
-                // MyAccUnit.intX + ((~MyAccUnit.intX + 1) & GETMASK(20,0)) == 2^20 == 1048576
+                // _MyAccUnit.intX + ((~_MyAccUnit.intX + 1) & GETMASK(20,0)) == 2^20 == 1048576
 
-                if(MyAccUnit.intX >= (1<<19))
-                    MyAccUnit.intX = (~MyAccUnit.intX + 1);
+                if(_MyAccUnit.intX >= (1<<19))
+                    _MyAccUnit.intX = (~_MyAccUnit.intX + 1);
                 
-                if(MyAccUnit.intY >= (1<<19))
-                    MyAccUnit.intY = (~MyAccUnit.intY + 1);
+                if(_MyAccUnit.intY >= (1<<19))
+                    _MyAccUnit.intY = (~_MyAccUnit.intY + 1);
 
-                if(MyAccUnit.intZ >= (1<<19))
-                    MyAccUnit.intZ = (~MyAccUnit.intZ + 1);
+                if(_MyAccUnit.intZ >= (1<<19))
+                    _MyAccUnit.intZ = (~_MyAccUnit.intZ + 1);
             }
         */
         // confirm data valid -- if you use polling not INT
@@ -254,25 +259,25 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
 
         // if 19th bit is 1, do two complement 
         if( ( uintX & ( 1<<(LenBitAxis-1) ) ) == 1<<(LenBitAxis-1) )
-            MyAccUnit.intX = (uintX | ~GETMASK(LenBitAxis,0));  // should invert
+            _MyAccUnit.intX = (uintX | ~GETMASK(LenBitAxis,0));  // should invert
         else
-             MyAccUnit.intX = uintX;
+            _MyAccUnit.intX = uintX;
 
         if( ( uintY & ( 1<<(LenBitAxis-1) ) ) == 1<<(LenBitAxis-1) )
-            MyAccUnit.intY = (uintY | ~GETMASK(LenBitAxis,0));  // should invert
+            _MyAccUnit.intY = (uintY | ~GETMASK(LenBitAxis,0));  // should invert
         else
-             MyAccUnit.intY = uintY;
+            _MyAccUnit.intY = uintY;
         
         if( ( uintZ & ( 1<<(LenBitAxis-1) ) ) == 1<<(LenBitAxis-1) )
-            MyAccUnit.intZ = (uintZ | ~GETMASK(LenBitAxis,0));  // should invert
+            _MyAccUnit.intZ = (uintZ | ~GETMASK(LenBitAxis,0));  // should invert
         else
-             MyAccUnit.intZ = uintZ;
+            _MyAccUnit.intZ = uintZ;
 
-        // add AccUnit to public dqueue
-        dq_push_back(MyAccUnit);
-        //dq_AccUnitData.push_back(MyAccUnit);
+        ParseAccDataUnit(&_MyAccUnit,&_MyfAccUnit);
+        
+        dq_push_back(_MyfAccUnit);
 
-        return true;    // 1 accDataUnit parse successfully
+        return true;    // 1 faccDataUnit parse successfully
     }
     catch(std::exception &e)
     {
@@ -307,7 +312,7 @@ ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
     _t.tv_sec -= adxl355_birth_time.tv_sec;
     _t.tv_nsec-= adxl355_birth_time.tv_nsec;
 
-    MyAccUnit.timestamp = _t;
+    _MyAccUnit.timestamp = _t;
 
     // FIFO_DATA at 0x11
     ssize_t ret = readMultiByte(0x11, LenDataSet);

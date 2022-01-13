@@ -73,7 +73,7 @@ namespace LRA_ADXL355
         }fAccUnit;
 
         deque<AccUnit> dq_AccUnitData;
-        
+        deque<fAccUnit> dq_fAccUnitData;
 
         enum RW{
             WRITE = 0,
@@ -458,14 +458,14 @@ namespace LRA_ADXL355
          * 
          * @param _accunit 
          */
-        void dq_push_back(const AccUnit _accunit);
+        void dq_push_back(const fAccUnit _faccunit);
 
         /**
          * @brief deque pop front for thread safe, get and rm at same time
          * 
          * @return AccUnit 
          */
-        AccUnit dq_pop_front();
+        fAccUnit dq_pop_front();
 
         /*Bit Operation related*/
 
@@ -667,7 +667,8 @@ namespace LRA_ADXL355
         //uint8_t getAddr(uint8_t uIndex);
 
         protected:
-        AccUnit MyAccUnit;
+        AccUnit _MyAccUnit;
+        fAccUnit _MyfAccUnit;
         bool _updateThread = 0;
         bool _exitThread = 0;
         bool _doMeasurement = 0;
