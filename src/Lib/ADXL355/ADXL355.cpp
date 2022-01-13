@@ -118,28 +118,17 @@ void ADXL355::_updateInBackground()
     AccUnit _accunit;
     fAccUnit _faccunit;
 
-    //test only
-    struct timespec t_required, t_remain;
-    t_required.tv_nsec = 1000L;
-    t_required.tv_sec = 0L;
-
     /*update information*/
     while(!_exitThread)
     {
         if(_doMeasurement)
-
         {
             if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
             {
                 ssize_t _len = readFifoDataSetOnce();
                 PreParseOneAccDataUnit(readBufPtr,_len);
             }
-            
-            /*move this part to main thread*/
-            //ParseAccDataUnit(&_accunit,&_faccunit);
-            //print("{:6.3f} (ms) x = {:6.3f} g, y = {:6.3f} g, z = {:6.3f} g\n",_faccunit.time_ms,_faccunit.fX,_faccunit.fY,_faccunit.fZ);   //print out test
         }
-        
     }
     print("Leaving update thread\n");
 }
