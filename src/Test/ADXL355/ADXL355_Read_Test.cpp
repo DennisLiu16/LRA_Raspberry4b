@@ -20,6 +20,14 @@ int main()
     struct timespec t_required, t_remain,t_main;
     double last_record_time = 0.0;
 
+    ADXL355::fOffset foffset =  adxl355.readOffset();
+    print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
+
+    foffset.fX = -0.053;
+    foffset.fY = 0.010;
+    foffset.fZ = 1.015;
+    adxl355.setOffset(foffset);
+
     while(1)
     {
         
@@ -31,7 +39,7 @@ int main()
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
             /*
-            print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record delay : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
+            print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                   now,
                   faccunit.time_ms,
                   now - faccunit.time_ms,
@@ -39,12 +47,12 @@ int main()
                   faccunit.fX,
                   faccunit.fY,
                   faccunit.fZ,
-                  adxl355.dq_AccUnitData.size()
+                  adxl355.dq_fAccUnitData.size()
                   );   //print out test
-            */
             
+            */
             double ptime = now - faccunit.time_ms;
-            if(ptime > 2.0)
+            //if(ptime > 0.5)
                 print("print time (ms): {:6.3f} | delay time (ms): {:6.3f} | x (g): {:6.3f} | y (g): {:6.3f} | z (g): {:6.3f} \n", now, ptime,faccunit.fX,faccunit.fY,faccunit.fZ);
             
             // assign last val

@@ -20,16 +20,22 @@ ADXL355::ADXL355(int channel = Default::spi_channel,
     /*Init setting*/
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
-    resetThisAdxl355();
+    //resetThisAdxl355();
     print("partid is {}\n",getPartID());
     setMeasureMode();
 
     if(_updateMode == INT_update_mode)
     {
         /*You should set your interrupt pin here or before thread initial*/
+
+        // set interrupt mode 
+        //-->interrupt pin
+        //-->interrupt function select 
+        //-->interrupt function 
+        // set fifo interrupt num
     }
 
-    // get offset and set
+    // get offset and tune 
 
     //Thread para
     if(_updateThread)
@@ -37,7 +43,6 @@ ADXL355::ADXL355(int channel = Default::spi_channel,
         _exitThread = 0;
         std::thread(&ADXL355::_updateInBackground,this).detach();
     }
-        
         
 }
 
@@ -65,7 +70,9 @@ inline uint8_t ADXL355::getLength(regIndex bIndex)
 // setting functions 
 void ADXL355::resetThisAdxl355()
 {
+    StopMeasurement();
     setSingleReg(getAddr(reset),0x52);  //from data sheet
+    StartMeasurement();
     print("System reset finished \n");
 }
 
@@ -73,31 +80,119 @@ void ADXL355::resetThisAdxl355()
 bool ADXL355::getStandByState()
 {
     /*change to readSingleBitPair() later*/
+    StopMeasurement();
     readSingleByte(getAddr(standby));
-    return (*readBufPtr | GETMASK(getLength(standby),getStartBit(standby)));
+    uint8_t u8read = *readBufPtr;
+    StartMeasurement();
+    return (u8read | GETMASK(getLength(standby),getStartBit(standby)));
 }
 
 void ADXL355::setStandByMode()
 {
-    _doMeasurement = 0;
+    StopMeasurement();
     setSingleBitPair(standby,1);
 }
 
 void ADXL355::setMeasureMode()
 {
-    _doMeasurement = 1;
+    StartMeasurement(); //start immediately
     setSingleBitPair(standby,0);
 }
 
 uint8_t ADXL355::getPartID()
 {
+    StopMeasurement();
     readSingleByte(getAddr(partid));
-    return *readBufPtr;
+    uint8_t u8read = *readBufPtr;
+    StartMeasurement();
+    return u8read;
 }
 
 ssize_t ADXL355::getAllReg()
 {
     //readMultiByte(getAddr(devid_ad),0x2f+1);
+}
+
+ADXL355::fOffset ADXL355::readOffset()
+{
+    StopMeasurement();
+    
+    readMultiByte(getAddr(offset_x_h),LenOffsetSet);
+
+    // no read buf protection
+    uint16_t uintX = (*readBufPtr << 8) | *(readBufPtr+1);
+    uint16_t uintY = (*(readBufPtr+2) << 8) | *(readBufPtr+3);
+    uint16_t uintZ = (*(readBufPtr+4) << 8) | *(readBufPtr+5);
+
+    int16_t intX = uintX, intY = uintY, intZ = uintZ;
+    //range check 
+    if(uintX >= (1<<15))
+        intX= ~uintX+1;
+    if(uintY >= (1<<15))
+        intY= ~uintY+1;
+    if(uintZ >= (1<<15))
+        intZ= ~uintZ+1;
+
+    //parse to float 
+    fOffset foffset;
+    foffset.fX =  (float)intX / offset_adc_num * AccMeasureRange;
+    foffset.fY =  (float)intY / offset_adc_num * AccMeasureRange;
+    foffset.fZ =  (float)intZ / offset_adc_num * AccMeasureRange;
+
+    StartMeasurement();
+
+    return foffset;
+}
+
+void ADXL355::setOffset()
+{
+
+}
+
+void ADXL355::setOffset(ADXL355::fOffset foffset)
+{
+    StopMeasurement();
+
+    int16_t intX = round(foffset.fX / AccMeasureRange * offset_adc_num);
+    int16_t intY = round(foffset.fY / AccMeasureRange * offset_adc_num);
+    int16_t intZ = round(foffset.fZ / AccMeasureRange * offset_adc_num);
+
+    if( abs(intX) > (offset_adc_num/2) ||
+        abs(intY) > (offset_adc_num/2) ||
+        abs(intZ) > (offset_adc_num/2) )
+    {
+        // out of range
+        print("offset set out of range \n");
+        return;
+    }
+
+    uint8_t tmp_buf[LenOffsetSet] = {
+        static_cast<uint8_t>(intX >> 8),
+        static_cast<uint8_t>(intX),
+        static_cast<uint8_t>(intY >> 8),
+        static_cast<uint8_t>(intY),
+        static_cast<uint8_t>(intZ >> 8),
+        static_cast<uint8_t>(intZ),
+    };
+
+    setMultiByte(getAddr(offset_x_h),LenOffsetSet,tmp_buf);
+
+    StartMeasurement();
+}
+
+void ADXL355::StartMeasurement()
+{
+    if(_updateThread && !_doMeasurement)
+        _doMeasurement = true;
+}
+
+void ADXL355::StopMeasurement()
+{
+    if(_updateThread && _doMeasurement)
+    {
+        _doMeasurement = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));  // wait for measure thread done one loop
+    }
 }
 
 // thread functions
@@ -128,10 +223,16 @@ void ADXL355::_updateInBackground()
     {
         if(_doMeasurement)
         {
+            // maybe read out old data here in first run 
             if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
             {
-                ssize_t _len = readFifoDataSetOnce();
-                PreParseOneAccDataUnit(readBufPtr,_len);
+                uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
+
+                //ssize_t _len = readFifoDataSetOnce();
+                //PreParseOneAccDataUnit(readBufPtr,_len);    //origin
+
+                ssize_t _len = readFifoDataSetOnce(tmp_buf);
+                PreParseOneAccDataUnit(tmp_buf+1,_len);    //readBufPtr here safe?
             }
         }
     }
@@ -174,13 +275,63 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
     return 0;
 }
 
+ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
+{
+    
+    if(len <= RW::RWByteMax)
+    {
+        uint8_t rcmd = (regaddr << 1) | READ;
+        *tmp_buf = rcmd;
+
+        // clean buf before send rcmd to prevent miswrite
+        
+
+        int ret = wiringPiSPIDataRW(channel,tmp_buf,len+1);
+        if(ret > 0)
+            return ret-1;
+        /*
+        you can't separate write and read owing to SPI SCLK trigger mechanism
+            ssize_t ret = write(SPI_fd,&rcmd,1);
+            if(ret > 0)
+            return read(SPI_fd,buf,len);
+        */
+
+        /*something bad happen*/
+        print("write readMultiByte rcmd failed\n");
+        return 0;
+    }
+    
+    print("readMiltiByte len over RW::RWByteMax = 4095\n");
+    return 0;
+}
+
+ssize_t ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
+{
+    if(len <= RW::RWByteMax)
+    {
+        uint8_t wcmd = (regaddr << 1) | WRITE;
+        uint8_t cmd_buf[len+1];
+        *cmd_buf = wcmd;
+        memcpy(cmd_buf+1,tmp_buf,len);
+
+        int ret = wiringPiSPIDataRW(channel,cmd_buf,len+1);
+        if(ret > 0)
+            return ret-1;
+
+        print("write setMultiByte wcmd failed\n");
+        return 0;
+    }
+    print("setMiltiByte len over RW::RWByteMax = 4095\n");
+    return 0;
+}
+
 ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
 {
-    // (2^20/2) == 524288 == adc_num
+    // (2^20/2) == 524288 == acc_adc_num
     _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
-    _faccUnit->fX = ((float)_accUnit->intX) / adc_num * measureRange; 
-    _faccUnit->fY = ((float)_accUnit->intY) / adc_num * measureRange; 
-    _faccUnit->fZ = ((float)_accUnit->intZ) / adc_num * measureRange; 
+    _faccUnit->fX = ((float)_accUnit->intX) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fY = ((float)_accUnit->intY) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fZ = ((float)_accUnit->intZ) / acc_adc_num * AccMeasureRange; 
 
     return true;
 }
@@ -330,6 +481,32 @@ ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
     return ret;
 }
 
+ssize_t ADXL355::readFifoDataSetOnce(uint8_t* tmp_buf/*need 9 bytes*/)
+{
+    //update timestamp
+    timespec _t;
+    clock_gettime(CLOCK_REALTIME, &_t);
+    _t.tv_sec -= adxl355_birth_time.tv_sec;
+    _t.tv_nsec-= adxl355_birth_time.tv_nsec;
+
+    _MyAccUnit.timestamp = _t;
+
+    // FIFO_DATA at 0x11
+    ssize_t ret = readMultiByte(0x11, LenDataSet, tmp_buf);
+
+    if(ret > 0)
+    {
+        AccDataMarker marker = CheckDataMarker(LenDataAxis);
+        switch(marker)
+        {   /*write some process if you want to deal with not X axis data problem*/
+            default:
+                break;
+        }
+    }
+
+    return ret;
+}
+
 ADXL355::AccDataMarker ADXL355::CheckDataMarker(ssize_t len)
 {
     if(len >= LenDataAxis)
@@ -408,7 +585,7 @@ void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 
 uint8_t ADXL355::getSingleBitPair(regIndex ri)
 {
-    return *readBufPtr;
+    //return *readBufPtr;
 }
 
 

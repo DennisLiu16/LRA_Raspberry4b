@@ -6,8 +6,10 @@
 
 #include <PI/LRA_PI_Util.h>
 #include <ErrorCode/LRA_ErrorCode.h>
+#include <cmath>
 #include <deque>
 #include <thread>
+#include <chrono>
 #include <mutex>
 extern "C" {
 #include <wiringPi.h>
@@ -50,7 +52,7 @@ namespace LRA_ADXL355
         public:
         int SPI_fd = 0;
         int channel = 0;
-        float measureRange = 4.196; //+- 2.048g in default --> change to getRange later
+        float AccMeasureRange = 4.196; //+- 2.048g in default --> change to getRange later
         uint8_t buf[4096] = {0};
         timespec adxl355_birth_time;
 
@@ -71,6 +73,12 @@ namespace LRA_ADXL355
             float fY;
             float fZ;
         }fAccUnit;
+
+        typedef struct{
+            float fX;
+            float fY;
+            float fZ;
+        }fOffset;
 
         deque<AccUnit> dq_AccUnitData;
         deque<fAccUnit> dq_fAccUnitData;
@@ -93,7 +101,8 @@ namespace LRA_ADXL355
             DataMarkerLen = 2,
 
             // length of acc data
-            LenDataAxis= 3, // single axis
+            LenDataAxis = 3, // single axis
+            LenOffsetSet = 6,
             LenDataSet = 9, // single acc unit
             LenBitAxis = 20,
 
@@ -108,7 +117,9 @@ namespace LRA_ADXL355
 
             polling_update_mode = 0,
             INT_update_mode = 1,
-            adc_num = 1048576, // (2^20)
+            acc_adc_num = 1048576, // (2^20)
+            offset_adc_num = 65536,// (2^16)
+            temp_adc_num = 4096    // (2^12)
         };
 
         enum regIndex{
@@ -449,6 +460,17 @@ namespace LRA_ADXL355
 
         /*Setting related*/
 
+        /**
+         * @brief read offset data of 3 axes
+         * 
+         * @return fOffset 
+         */
+        fOffset readOffset();
+
+        void setOffset();
+
+        void setOffset(fOffset foffset);
+
         /*Thread safe related*/
 
         void _updateInBackground();
@@ -468,8 +490,6 @@ namespace LRA_ADXL355
         fAccUnit dq_pop_front();
 
         /*Bit Operation related*/
-
-        
 
         /**
          * @brief preparse one acc data set (9 bytes) in buf into int
@@ -513,6 +533,14 @@ namespace LRA_ADXL355
          * @return ssize_t
          */
         ssize_t readFifoDataSetOnce();
+
+        /**
+         * @brief overload of given restored buffer(10 byte total)
+         * 
+         * @param tmp_buf 
+         * @return ssize_t 
+         */
+        ssize_t readFifoDataSetOnce(uint8_t* tmp_buf);
 
         /**
          * @brief Set register at regaddr to val with no writemask
@@ -579,6 +607,26 @@ namespace LRA_ADXL355
         ssize_t readMultiByte(uint8_t regaddr, ssize_t len);
 
         /**
+         * @brief overload of readMultiByte given restored buffer
+         * 
+         * @param regaddr 
+         * @param len 
+         * @param tmp_buf 
+         * @return ssize_t 
+         */
+        ssize_t readMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf);
+
+        /**
+         * @brief Set multiple bytes data to ADXL355
+         * 
+         * @param regaddr 
+         * @param len 
+         * @param tmp_buf 
+         * @return ssize_t 
+         */
+        ssize_t setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf);
+
+        /**
          * @brief if len > 3, check buf[2] data marker.
          * 
          * @details including sho error and empty warning, but not including correct FIFO
@@ -630,6 +678,18 @@ namespace LRA_ADXL355
          * @return ssize_t 
          */
         ssize_t getAllReg();
+
+        /**
+         * @brief stop _doMeasurement for other SPI operation
+         * 
+         */
+        void StopMeasurement();
+
+        /**
+         * @brief recover _doMeasurement
+         * 
+         */
+        void StartMeasurement();
 
 
         
