@@ -49,7 +49,7 @@ int main()
 
             double ptime = now - faccunit.time_ms;
             if(ptime > 0.3)
-            
+            {
             print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                   now,
                   faccunit.time_ms,
@@ -60,10 +60,19 @@ int main()
                   faccunit.fZ,
                   adxl355.dq_fAccUnitData.size()
                   );   //print out test
+            }
             
             if(now - last_now > 1000)
             {
-                print("now : {:6.3f}  (s)\n",now*0.001);
+                  print("now : {:6.3f}  (s) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
+                  now/1000,
+                  ptime,
+                  faccunit.time_ms - last_record_time,
+                  faccunit.fX,
+                  faccunit.fY,
+                  faccunit.fZ,
+                  adxl355.dq_fAccUnitData.size()
+                  );   //print out test
                 last_now += 1000;
             }
                 

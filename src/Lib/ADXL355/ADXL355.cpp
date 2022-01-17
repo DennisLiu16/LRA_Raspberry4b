@@ -235,6 +235,7 @@ void ADXL355::setOffset()
     // read for about 1 sec 
     timespec front;
     timespec end;
+    timespec diff;
     clock_gettime(CLOCK_REALTIME,&front);
     clock_gettime(CLOCK_REALTIME,&end);
     // get avg 
@@ -255,17 +256,44 @@ void ADXL355::setOffset()
 
             _fifoINTRdyFlag = 0;
         }
-        clock_gettime(CLOCK_REALTIME,&end);
     }
-    print("size of dq is : {}\n",dq_fAccUnitData.size());
+
+    clock_gettime(CLOCK_REALTIME,&end);
+    diff.tv_sec = end.tv_sec - front.tv_sec;
+    diff.tv_nsec = end.tv_nsec - front.tv_nsec; // optimize this
+
+    print("Collect 10000 data take {} (ns)\n",diff.tv_sec*1e9+diff.tv_nsec);
+
+    clock_gettime(CLOCK_REALTIME,&front);
+    clock_gettime(CLOCK_REALTIME,&end);
 
     // avg
+    fAccUnit faccunit = 
+    {
+        .fX = 0.0,
+        .fY = 0.0,
+        .fZ = 0.0
+    };
+    
+    while(!dq_fAccUnitData.empty())
+    {
+        fAccUnit tmp = dq_pop_front();
+        faccunit += tmp;
+    }
 
-    // test only
+    faccunit/=10000;    // optimize this
+    
+    clock_gettime(CLOCK_REALTIME,&end);
+    diff.tv_sec = end.tv_sec - front.tv_sec;
+    diff.tv_nsec = end.tv_nsec - front.tv_nsec; //optimize this
+
+    print("Calculate average take {} (ns)\n",diff.tv_sec*1e9+diff.tv_nsec);
+    print("fX : {:6.3f}, fY : {:6.3f}, fZ : {:6.3f} \n",faccunit.fX,faccunit.fY,faccunit.fZ);
+
     fOffset foffset;
-    foffset.fX = -0.14;
-    foffset.fY = 0.010;
-    foffset.fZ = 1.015;
+    foffset.fX = faccunit.fX;
+    foffset.fY = faccunit.fY;
+    foffset.fZ = faccunit.fZ;   //optimize this
 
     // set offset
     setOffset(foffset);

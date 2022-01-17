@@ -70,20 +70,61 @@ namespace LRA_ADXL355
             int intZ;
         }AccUnit;
 
-        typedef struct{
+        typedef struct fAccUnit
+        {
             double time_ms;
             double fX;
             double fY;
             double fZ;
+
+            bool operator==(const fAccUnit& rhs) const
+            {
+                return ( fX == rhs.fX && fY == rhs.fY && fZ == rhs.fZ && time_ms == rhs.time_ms);
+            }
+
+            fAccUnit operator+=(fAccUnit const& rhs ) 
+            {
+                fX += rhs.fX;
+                fY += rhs.fY;
+                fZ += rhs.fZ;
+                time_ms = (time_ms > rhs.time_ms) ? time_ms : rhs.time_ms;
+                return *this;
+            }
+
+            fAccUnit operator+(fAccUnit const& rhs)
+            {
+                return *this+=rhs;
+            }
+
+            fAccUnit operator/=(double const& rhs)
+            {
+                // maybe can be optimized
+                fX /= rhs;
+                fY /= rhs;
+                fZ /= rhs;
+                return *this;
+            }
+
+            fAccUnit operator/(double const& rhs)
+            {
+                return *this/=rhs;
+            }
+
         }fAccUnit;
 
-        typedef struct{
+        typedef struct fOffset{
             double fX;
             double fY;
             double fZ;
+
+            bool operator==(const fOffset& rhs) const
+            {
+                return ( fX == rhs.fX && fY == rhs.fY && fZ == rhs.fZ);
+            }
+
+
         }fOffset;
 
-        deque<AccUnit> dq_AccUnitData;
         deque<fAccUnit> dq_fAccUnitData;
 
         enum RW{
