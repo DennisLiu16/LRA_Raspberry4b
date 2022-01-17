@@ -1,19 +1,42 @@
 #include <ADXL355/ADXL355.h>
 using namespace LRA_ADXL355;
 
-ADXL355::ADXL355(int channel = Default::spi_channel,
-                 int speed = Default::spi_speed,
-                 int mode = Default::spi_mode,
-                 bool updateThread = Default::open_updateThread,
-                 bool updateMode = Default::polling_update_mode
+/* init static variable */
+ADXL355* ADXL355::InstanceArray[ADXL355::MAX_INSTANCE_NUM] = {nullptr};
+
+ADXL355::ADXL355(int channel,
+                 int speed,
+                 int mode,
+                 bool updateThread,
+                 bool updateMode,
+                 void (*isr_handler)(void)
                  )
     {
-    /*init spi*/
+
+    /* put this pointer into InstanceArray*/
+    int i = 0;
+    while( i < MAX_INSTANCE_NUM)
+    {
+        if(InstanceArray[i] == nullptr)
+        {
+            _thisInstanceIndex = i;
+            break;
+        }
+    }
+    if(_thisInstanceIndex < 0)
+    {
+        print("Instance array need to enlarge\n");
+        return;
+    }
+        
+    InstanceArray[_thisInstanceIndex] = this;
+
+    /* init spi */
     SPI_fd = wiringPiSPISetupMode(channel,speed,mode);
     if(SPI_fd > 0)
-        print("open SPI successed\n");
+        print("Instance {} open SPI successed\n",_thisInstanceIndex + 1);
 
-    ADXL355::channel = channel;
+    _channel = channel;
     _updateMode = updateMode;
     _updateThread = updateThread;
 
@@ -26,13 +49,29 @@ ADXL355::ADXL355(int channel = Default::spi_channel,
 
     if(_updateMode == INT_update_mode)
     {
-        /*You should set your interrupt pin here or before thread initial*/
+        /*You should set your interrupt pin here or before thread initial and make sure wiringPiSetup () in your main thread first;*/
 
-        // set interrupt mode 
-        //-->interrupt pin
-        //-->interrupt function select 
-        //-->interrupt function 
-        // set fifo interrupt num
+        // create a static array to restore address of all adxl355 at header file
+
+        // put this ptr in that array here 
+
+        // create static class method and use this->_fifoflag change? 
+
+        /*
+         set interrupt mode 
+          -->interrupt pin
+          -->interrupt function select 
+          -->interrupt function 
+        */
+        int INT_PIN1 = INT1;
+
+        pinMode(INT_PIN1, INPUT);
+        pullUpDnControl(INT_PIN1,PUD_UP);
+    
+        wiringPiISR(INT_PIN1,INT_EDGE_FALLING,isr_handler);
+
+        //set adxl355 register to enable interrupt
+
     }
 
     // get offset and tune 
@@ -50,6 +89,7 @@ ADXL355::~ADXL355()
 {
     //pass
     _exitThread = 1;
+    InstanceArray[_thisInstanceIndex] = nullptr;
 }
 
 inline uint8_t ADXL355::getAddr(regIndex bIndex)
@@ -125,13 +165,8 @@ ADXL355::fOffset ADXL355::readOffset()
     uint16_t uintZ = (*(readBufPtr+4) << 8) | *(readBufPtr+5);
 
     int16_t intX = uintX, intY = uintY, intZ = uintZ;
-    //range check 
-    if(uintX >= (1<<15))
-        intX= ~uintX+1;
-    if(uintY >= (1<<15))
-        intY= ~uintY+1;
-    if(uintZ >= (1<<15))
-        intZ= ~uintZ+1;
+
+    // owing to it's a 16 bits num, so copy uint to int directly , int will deal with positive and negative issue automatically)
 
     //parse to float 
     fOffset foffset;
@@ -146,7 +181,17 @@ ADXL355::fOffset ADXL355::readOffset()
 
 void ADXL355::setOffset()
 {
+    StopMeasurement();
+    
+    // read for about 1 sec 
 
+    // get avg 
+    fOffset foffset;
+
+    // set offset
+    setOffset(foffset);
+
+    StartMeasurement();
 }
 
 void ADXL355::setOffset(ADXL355::fOffset foffset)
@@ -195,6 +240,13 @@ void ADXL355::StopMeasurement()
     }
 }
 
+void ADXL355::isr_default()
+{
+    // do nothing for default is polling mode
+    // if you want to use interrupt mode, build one irq_handler in the main thread 
+    // see example 
+}
+
 // thread functions
 void ADXL355::dq_push_back(const fAccUnit _faccunit)
 {
@@ -233,6 +285,7 @@ void ADXL355::_updateInBackground()
 
                 ssize_t _len = readFifoDataSetOnce(tmp_buf);
                 PreParseOneAccDataUnit(tmp_buf+1,_len);    //readBufPtr here safe?
+                _fifoINTRdyFlag = 0;
             }
         }
     }
@@ -256,7 +309,7 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
         // clean buf before send rcmd to prevent miswrite
         
 
-        int ret = wiringPiSPIDataRW(channel,buf,len+1);
+        int ret = wiringPiSPIDataRW(_channel,buf,len+1);
         if(ret > 0)
             return ret-1;
         /*
@@ -286,7 +339,7 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
         // clean buf before send rcmd to prevent miswrite
         
 
-        int ret = wiringPiSPIDataRW(channel,tmp_buf,len+1);
+        int ret = wiringPiSPIDataRW(_channel,tmp_buf,len+1);
         if(ret > 0)
             return ret-1;
         /*
@@ -314,7 +367,7 @@ ssize_t ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
         *cmd_buf = wcmd;
         memcpy(cmd_buf+1,tmp_buf,len);
 
-        int ret = wiringPiSPIDataRW(channel,cmd_buf,len+1);
+        int ret = wiringPiSPIDataRW(_channel,cmd_buf,len+1);
         if(ret > 0)
             return ret-1;
 

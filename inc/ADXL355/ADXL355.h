@@ -50,11 +50,13 @@ namespace LRA_ADXL355
 
     class ADXL355{
         public:
+        static ADXL355* InstanceArray[10];  // you need to mod if you need more than 10 adxl355 instances
+
         int SPI_fd = 0;
-        int channel = 0;
         float AccMeasureRange = 4.196; //+- 2.048g in default --> change to getRange later
         uint8_t buf[4096] = {0};
         timespec adxl355_birth_time;
+        volatile bool _fifoINTRdyFlag = 0;
 
         // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
         const uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
@@ -119,7 +121,11 @@ namespace LRA_ADXL355
             INT_update_mode = 1,
             acc_adc_num = 1048576, // (2^20)
             offset_adc_num = 65536,// (2^16)
-            temp_adc_num = 4096    // (2^12)
+            temp_adc_num = 4096,   // (2^12)
+
+            MAX_INSTANCE_NUM = 10,
+
+            INT1 = 29,
         };
 
         enum regIndex{
@@ -455,7 +461,7 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        ADXL355(int channel, int speed,int mode,bool updateThread,bool updateMode);   // channel is CE pin index
+        ADXL355(int channel, int speed,int mode,bool updateThread,bool updateMode, void (*isr_handler)(void));   // channel is CE pin index
         ~ADXL355();
 
         /*Setting related*/
@@ -470,6 +476,8 @@ namespace LRA_ADXL355
         void setOffset();
 
         void setOffset(fOffset foffset);
+
+        static void isr_default();
 
         /*Thread safe related*/
 
@@ -727,13 +735,14 @@ namespace LRA_ADXL355
         //uint8_t getAddr(uint8_t uIndex);
 
         protected:
+        int _thisInstanceIndex = -1;
+        int _channel = 0;
         AccUnit _MyAccUnit;
         fAccUnit _MyfAccUnit;
         bool _updateThread = 0;
         bool _exitThread = 0;
         bool _doMeasurement = 0;
         bool _updateMode = 0;
-        volatile bool _fifoINTRdyFlag = 0;
         std::mutex deque_mutex;
     };
 }

@@ -1,6 +1,13 @@
 #include <ADXL355/ADXL355.h>
 #include <time.h>
 using namespace LRA_ADXL355;
+
+void irq_test_0()
+{
+    if(ADXL355::InstanceArray[0] != nullptr)
+        ADXL355::InstanceArray[0]->_fifoINTRdyFlag = 1;
+}
+
 int main()
 {
     wiringPiSetup ();
@@ -10,7 +17,11 @@ int main()
     struct timespec startt;
     clock_gettime(CLOCK_REALTIME, &startt);
 
-    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::polling_update_mode);
+    // for polling 
+    //ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::polling_update_mode,ADXL355::isr_default);
+    
+    // for interrupt
+    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
 
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
@@ -23,7 +34,7 @@ int main()
     ADXL355::fOffset foffset =  adxl355.readOffset();
     print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
 
-    foffset.fX = -0.053;
+    foffset.fX = -0.14;
     foffset.fY = 0.010;
     foffset.fZ = 1.015;
     adxl355.setOffset(foffset);
@@ -35,7 +46,6 @@ int main()
         {
             faccunit = adxl355.dq_pop_front();
             clock_gettime(CLOCK_REALTIME, &t_main);
-            
             timespec t_now = {.tv_sec = t_main.tv_sec-adxl355.adxl355_birth_time.tv_sec,.tv_nsec = t_main.tv_nsec-adxl355.adxl355_birth_time.tv_nsec};
             double now = (t_now.tv_sec)*1e3 + (t_now.tv_nsec)/1e6;
             /*
@@ -52,7 +62,7 @@ int main()
             
             */
             double ptime = now - faccunit.time_ms;
-            //if(ptime > 0.5)
+            if(ptime > 0.5)
                 print("print time (ms): {:6.3f} | delay time (ms): {:6.3f} | x (g): {:6.3f} | y (g): {:6.3f} | z (g): {:6.3f} \n", now, ptime,faccunit.fX,faccunit.fY,faccunit.fZ);
             
             // assign last val
