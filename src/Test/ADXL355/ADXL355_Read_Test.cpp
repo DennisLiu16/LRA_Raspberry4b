@@ -64,7 +64,7 @@ int main()
             if(now - last_now > 1000)
             {
                 print("now : {:6.3f}  (s)\n",now*0.001);
-                last_now = now;
+                last_now += 1000;
             }
                 
             // assign last val

@@ -233,8 +233,33 @@ void ADXL355::setOffset()
     StopMeasurement();
     
     // read for about 1 sec 
-
+    timespec front;
+    timespec end;
+    clock_gettime(CLOCK_REALTIME,&front);
+    clock_gettime(CLOCK_REALTIME,&end);
     // get avg 
+
+    while(dq_fAccUnitData.size() < 10000)
+    {
+        if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
+        {
+            uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
+
+            //ssize_t _len = readFifoDataSetOnce();
+            //PreParseOneAccDataUnit(readBufPtr,_len);    //origin
+
+            ssize_t _len = readAxesDataOnce(tmp_buf);
+            //ssize_t _len = readFifoDataSetOnce(tmp_buf);
+            PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    //readBufPtr here safe?
+            //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
+
+            _fifoINTRdyFlag = 0;
+        }
+        clock_gettime(CLOCK_REALTIME,&end);
+    }
+    print("size of dq is : {}\n",dq_fAccUnitData.size());
+
+    // avg
 
     // test only
     fOffset foffset;
