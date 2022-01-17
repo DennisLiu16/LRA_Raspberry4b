@@ -43,7 +43,7 @@ ADXL355::ADXL355(int channel,
     /*Init setting*/
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
-    //resetThisAdxl355();
+    resetThisAdxl355();
     print("partid is {}\n",getPartID());
     setMeasureMode();
 
@@ -63,18 +63,20 @@ ADXL355::ADXL355(int channel,
           -->interrupt function select 
           -->interrupt function 
         */
-        int INT_PIN1 = INT1;
+        int INT_PIN1 = Default::INT1;
 
         pinMode(INT_PIN1, INPUT);
-        pullUpDnControl(INT_PIN1,PUD_UP);
+        pullUpDnControl(INT_PIN1,PUD_DOWN);
     
-        wiringPiISR(INT_PIN1,INT_EDGE_FALLING,isr_handler);
+        wiringPiISR(INT_PIN1,INT_EDGE_RISING,isr_handler);
 
-        //set adxl355 register to enable interrupt
+        // set adxl355 register to enable interrupt
+        // use DRDY pin - active high
 
     }
 
     // get offset and tune 
+    setOffset();
 
     //Thread para
     if(_updateThread)
@@ -186,7 +188,12 @@ void ADXL355::setOffset()
     // read for about 1 sec 
 
     // get avg 
+
+    // test only
     fOffset foffset;
+    foffset.fX = -0.14;
+    foffset.fY = 0.010;
+    foffset.fZ = 1.015;
 
     // set offset
     setOffset(foffset);
@@ -283,9 +290,12 @@ void ADXL355::_updateInBackground()
                 //ssize_t _len = readFifoDataSetOnce();
                 //PreParseOneAccDataUnit(readBufPtr,_len);    //origin
 
-                ssize_t _len = readFifoDataSetOnce(tmp_buf);
-                PreParseOneAccDataUnit(tmp_buf+1,_len);    //readBufPtr here safe?
-                _fifoINTRdyFlag = 0;
+                ssize_t _len = readAxesDataOnce(tmp_buf);
+                //ssize_t _len = readFifoDataSetOnce(tmp_buf);
+                PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    //readBufPtr here safe?
+                //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
+
+                // clean _fifoINTRdyFlag at PreParseOneAccDataUnit;
             }
         }
     }
@@ -401,13 +411,13 @@ ssize_t ADXL355::PreParseAccData(ssize_t len)
 
     for(int ind = 0 ; ind < len ; ind += LenDataSet)
     {
-        NumAccUnitParse += PreParseOneAccDataUnit(buf+ind,LenDataSet);
+        NumAccUnitParse += PreParseOneAccDataUnit(buf+ind,LenDataSet,TypeFifo);
     }
 
     return NumAccUnitParse;
 }
 
-ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
+ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int type)
 {
     //tiem stamp should add 
 
@@ -453,9 +463,12 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
             }
         */
         // confirm data valid -- if you use polling not INT
+
+        
         uint8_t datamarker = (buf[2] | buf[5] | buf[8]) & GETMASK(DataMarkerLen,0);
-        if(datamarker != ADXL355::isX)
+        if((datamarker != ADXL355::isX) && type == TypeFifo)
             return true;
+        
         
         uint32_t uintX = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4) & GETMASK(LenBitAxis,0);    // shift and confirm only 0 to 19th bits meaningful
         uint32_t uintY = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4) & GETMASK(LenBitAxis,0);
@@ -488,6 +501,32 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len)
         print("%s\n",e.what());
         return false;
     }
+}
+
+ssize_t ADXL355::readAxesDataOnce(uint8_t* tmp_buf/*9+1 bytes*/)
+{
+    //update timestamp
+    timespec _t;
+    clock_gettime(CLOCK_REALTIME, &_t);
+    _t.tv_sec -= adxl355_birth_time.tv_sec;
+    _t.tv_nsec-= adxl355_birth_time.tv_nsec;
+
+    _MyAccUnit.timestamp = _t;
+
+    // FIFO_DATA at 0x08
+    ssize_t ret = readMultiByte(0x08, LenDataSet, tmp_buf);
+
+    if(ret > 0)
+    {
+        AccDataMarker marker = CheckDataMarker(LenDataAxis);
+        switch(marker)
+        {   /*write some process if you want to deal with not X axis data problem*/
+            default:
+                break;
+        }
+    }
+
+    return ret;
 }
 
 ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
@@ -534,7 +573,7 @@ ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
     return ret;
 }
 
-ssize_t ADXL355::readFifoDataSetOnce(uint8_t* tmp_buf/*need 9 bytes*/)
+ssize_t ADXL355::readFifoDataSetOnce(uint8_t* tmp_buf/*need 9+1 bytes*/)
 {
     //update timestamp
     timespec _t;

@@ -34,11 +34,6 @@ int main()
     ADXL355::fOffset foffset =  adxl355.readOffset();
     print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
 
-    foffset.fX = -0.14;
-    foffset.fY = 0.010;
-    foffset.fZ = 1.015;
-    adxl355.setOffset(foffset);
-
     while(1)
     {
         

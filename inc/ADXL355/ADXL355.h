@@ -98,6 +98,9 @@ namespace LRA_ADXL355
             isOther = 0,
             isX = 1,
             isEmpty = 2,
+
+            TypeAxes = 0,
+            TypeFifo = 1,
     
             XDataMarkerPos = 2,
             DataMarkerLen = 2,
@@ -126,6 +129,7 @@ namespace LRA_ADXL355
             MAX_INSTANCE_NUM = 10,
 
             INT1 = 29,
+            
         };
 
         enum regIndex{
@@ -506,7 +510,7 @@ namespace LRA_ADXL355
          * @param len
          * @return ssize_t, true if parse successfully, or return false
          */
-        ssize_t PreParseOneAccDataUnit(const uint8_t* buf,ssize_t len);
+        ssize_t PreParseOneAccDataUnit(const uint8_t* buf,ssize_t len, int type);
 
         /**
          * @brief preparse all acc data in buf into int
@@ -525,6 +529,14 @@ namespace LRA_ADXL355
          * @return ssize_t 
          */
         ssize_t ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit);
+
+        /**
+         * @brief read data from X_axis register to Z_axis register directly
+         * 
+         * @param tmp_buf
+         * @return ssize_t 
+         */
+        ssize_t readAxesDataOnce(uint8_t* tmp_buf);
 
         /**
          * @brief read accleration data once, x or y or z total 3 bytes uint8_t should be read to buf
