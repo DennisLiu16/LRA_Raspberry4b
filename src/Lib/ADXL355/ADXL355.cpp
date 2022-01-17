@@ -315,10 +315,7 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
     {
         uint8_t rcmd = (regaddr << 1) | READ;
         *buf = rcmd;
-
-        // clean buf before send rcmd to prevent miswrite
         
-
         int ret = wiringPiSPIDataRW(_channel,buf,len+1);
         if(ret > 0)
             return ret-1;
@@ -658,10 +655,10 @@ void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
 void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 {
     uint8_t regaddr = getAddr(ri);
-    ssize_t ret = readSingleByte(SPI_fd);
+    ssize_t ret = readSingleByte(regaddr);
     if(ret == 0)
     {
-        print("set single bit pair failed -- read \n");
+        print("set single bit pair failed -- read stage \n");
         return;
     }
 
@@ -677,7 +674,18 @@ void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 
 uint8_t ADXL355::getSingleBitPair(regIndex ri)
 {
-    //return *readBufPtr;
+    uint8_t regaddr = getAddr(ri);
+    ssize_t ret = readSingleByte(regaddr);
+    if(ret == 0)
+    {
+        print("get single bit pair failed -- read stage \n");
+        return 0;
+    }
+
+    *buf = *readBufPtr & GETMASK(getLength(ri),getStartBit(ri));
+
+    /* get value of bit pair */
+    return (*buf >> getStartBit(ri));
 }
 
 
