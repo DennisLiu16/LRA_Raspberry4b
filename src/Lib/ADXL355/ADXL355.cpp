@@ -132,13 +132,60 @@ bool ADXL355::getStandByState()
 void ADXL355::setStandByMode()
 {
     StopMeasurement();
-    setSingleBitPair(standby,1);
+    setSingleBitPair(regIndex::standby,1);
 }
 
 void ADXL355::setMeasureMode()
 {
+    setSingleBitPair(regIndex::standby,0);
     StartMeasurement(); //start immediately
-    setSingleBitPair(standby,0);
+}
+
+uint8_t ADXL355::readMeasureRange()
+{
+    StopMeasurement();
+    uint8_t val = getSingleBitPair(regIndex::range);
+    switch(val)
+    {
+        case Value::Range_2g:
+            print("current measure range is ± 2g\n");
+            break;
+        case Value::Range_4g:
+            print("current measure range is ± 4g\n");
+            break;
+        case Value::Range_8g:
+            print("current measure range is ± 8g\n");
+            break;
+        default:
+            print("get measure range failed, plz check \n");
+    }
+    StartMeasurement();
+    return val;
+}
+
+void ADXL355::setMeasureRange(uint8_t val)
+{
+    StopMeasurement();
+
+    /*val should be 0b10, 0b01 or 0b11*/
+    switch(val)
+    {
+        case Value::Range_2g:
+            print("set measure range to ± 2g\n");
+            break;
+        case Value::Range_4g:
+            print("set measure range to ± 4g\n");
+            break;
+        case Value::Range_8g:
+            print("set measure range to ± 8g\n");
+            break;
+        default:
+            print("range out of range, set to ± 2g\n");
+            val = Value::Range_2g;
+    }
+
+    setSingleBitPair(regIndex::range, val);
+    StartMeasurement();
 }
 
 uint8_t ADXL355::getPartID()
@@ -170,11 +217,11 @@ ADXL355::fOffset ADXL355::readOffset()
 
     // owing to it's a 16 bits num, so copy uint to int directly , int will deal with positive and negative issue automatically)
 
-    //parse to float 
+    //parse to double
     fOffset foffset;
-    foffset.fX =  (float)intX / offset_adc_num * AccMeasureRange;
-    foffset.fY =  (float)intY / offset_adc_num * AccMeasureRange;
-    foffset.fZ =  (float)intZ / offset_adc_num * AccMeasureRange;
+    foffset.fX =  (double)intX / offset_adc_num * AccMeasureRange;
+    foffset.fY =  (double)intY / offset_adc_num * AccMeasureRange;
+    foffset.fZ =  (double)intZ / offset_adc_num * AccMeasureRange;
 
     StartMeasurement();
 
@@ -209,9 +256,11 @@ void ADXL355::setOffset(ADXL355::fOffset foffset)
     int16_t intY = round(foffset.fY / AccMeasureRange * offset_adc_num);
     int16_t intZ = round(foffset.fZ / AccMeasureRange * offset_adc_num);
 
-    if( abs(intX) > (offset_adc_num/2) ||
-        abs(intY) > (offset_adc_num/2) ||
-        abs(intZ) > (offset_adc_num/2) )
+    //https://www.pupuliao.info/2014/06/cc-%E5%88%A9%E7%94%A8%E4%BD%8D%E5%85%83%E9%81%8B%E7%AE%97%E5%8A%A0%E9%80%9F%E9%81%8B%E7%AE%97%E6%95%88%E7%8E%87/
+
+    if( ABS(intX) > (offset_adc_num >> 1) ||    // offset_adc_num / 2
+        ABS(intY) > (offset_adc_num >> 1) ||
+        ABS(intZ) > (offset_adc_num >> 1) )
     {
         // out of range
         print("offset set out of range \n");
@@ -295,7 +344,7 @@ void ADXL355::_updateInBackground()
                 PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    //readBufPtr here safe?
                 //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
 
-                // clean _fifoINTRdyFlag at PreParseOneAccDataUnit;
+                _fifoINTRdyFlag = 0;
             }
         }
     }
@@ -389,9 +438,9 @@ ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
 {
     // (2^20/2) == 524288 == acc_adc_num
     _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
-    _faccUnit->fX = ((float)_accUnit->intX) / acc_adc_num * AccMeasureRange; 
-    _faccUnit->fY = ((float)_accUnit->intY) / acc_adc_num * AccMeasureRange; 
-    _faccUnit->fZ = ((float)_accUnit->intZ) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fX = ((double)_accUnit->intX) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fY = ((double)_accUnit->intY) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fZ = ((double)_accUnit->intZ) / acc_adc_num * AccMeasureRange; 
 
     return true;
 }

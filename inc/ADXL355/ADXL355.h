@@ -42,6 +42,7 @@ extern "C" {
         uint8_t wantW3To6Bits =  (target & GETMASK(4,3)) | data;
 */
 #define GETMASK(length,startbit) (((1 << length) - 1) << startbit)
+#define ABS(x) ((x ^ (x >> 31)) - (x >> 31))
 
 namespace LRA_ADXL355
 {
@@ -53,7 +54,7 @@ namespace LRA_ADXL355
         static ADXL355* InstanceArray[10];  // you need to mod if you need more than 10 adxl355 instances
 
         int SPI_fd = 0;
-        float AccMeasureRange = 4.196; //+- 2.048g in default --> change to getRange later
+        double AccMeasureRange = 4.196; //+- 2.048g in default --> change to getRange later
         uint8_t buf[4096] = {0};
         timespec adxl355_birth_time;
         volatile bool _fifoINTRdyFlag = 0;
@@ -71,15 +72,15 @@ namespace LRA_ADXL355
 
         typedef struct{
             double time_ms;
-            float fX;
-            float fY;
-            float fZ;
+            double fX;
+            double fY;
+            double fZ;
         }fAccUnit;
 
         typedef struct{
-            float fX;
-            float fY;
-            float fZ;
+            double fX;
+            double fY;
+            double fZ;
         }fOffset;
 
         deque<AccUnit> dq_AccUnitData;
@@ -130,6 +131,16 @@ namespace LRA_ADXL355
 
             INT1 = 29,
             
+        };
+
+        enum Value{
+
+
+            Range_2g = 0b01,
+            Range_4g = 0b10,
+            Range_8g = 0b11,
+
+
         };
 
         enum regIndex{
@@ -612,9 +623,23 @@ namespace LRA_ADXL355
          * @brief read temperature (12bits) to buf
          * 
          * @param buf 
-         * @return uint8_t 
+         * @return uint8_t --> change to double instead
          */
         uint8_t readTemp();
+
+        /**
+         * @brief read the measure range of adxl355 -> 2g/4g/8g
+         * 
+         * @return uint8_t 
+         */
+        uint8_t readMeasureRange();
+
+        /**
+         * @brief set the measure range of adxl355 -> 2g/4g/8g
+         * 
+         * @param val 
+         */
+        void setMeasureRange(uint8_t val);
 
         /**
          * @brief read len  bytes or registers that start from regaddr  
