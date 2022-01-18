@@ -25,7 +25,7 @@ ADXL355::ADXL355(int channel,
     }
     if(_thisInstanceIndex < 0)
     {
-        print("Instance array need to enlarge\n");
+        print("Instance array need to be enlarged\n");
         return;
     }
         
@@ -45,24 +45,16 @@ ADXL355::ADXL355(int channel,
 
     resetThisAdxl355();
     print("partid is {}\n",getPartID());
+
+    struct timespec tt;
+    clock_getres(CLOCK_REALTIME, &tt);
+    print("clock resolution: {} ns\n", tt.tv_nsec);
+
     setMeasureMode();
 
     if(_updateMode == INT_update_mode)
     {
         /*You should set your interrupt pin here or before thread initial and make sure wiringPiSetup () in your main thread first;*/
-
-        // create a static array to restore address of all adxl355 at header file
-
-        // put this ptr in that array here 
-
-        // create static class method and use this->_fifoflag change? 
-
-        /*
-         set interrupt mode 
-          -->interrupt pin
-          -->interrupt function select 
-          -->interrupt function 
-        */
         int INT_PIN1 = Default::INT1;
 
         pinMode(INT_PIN1, INPUT);
@@ -219,9 +211,9 @@ ADXL355::fOffset ADXL355::readOffset()
 
     //parse to double
     fOffset foffset;
-    foffset.fX =  (double)intX / offset_adc_num * AccMeasureRange;
-    foffset.fY =  (double)intY / offset_adc_num * AccMeasureRange;
-    foffset.fZ =  (double)intZ / offset_adc_num * AccMeasureRange;
+    foffset.fX =  (double)intX * (1.0 / offset_adc_num) * AccMeasureRange;
+    foffset.fY =  (double)intY * (1.0 / offset_adc_num) * AccMeasureRange;
+    foffset.fZ =  (double)intZ * (1.0 / offset_adc_num) * AccMeasureRange;
 
     StartMeasurement();
 
@@ -240,7 +232,7 @@ void ADXL355::setOffset()
     clock_gettime(CLOCK_REALTIME,&end);
     // get avg 
 
-    while(dq_fAccUnitData.size() < 10000)
+    while(dq_fAccUnitData.size() < AVG_data_size)
     {
         if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
         {
@@ -259,13 +251,12 @@ void ADXL355::setOffset()
     }
 
     clock_gettime(CLOCK_REALTIME,&end);
-    diff.tv_sec = end.tv_sec - front.tv_sec;
-    diff.tv_nsec = end.tv_nsec - front.tv_nsec; // optimize this
 
-    print("Collect 10000 data take {} (ns)\n",diff.tv_sec*1e9+diff.tv_nsec);
+    print("Collect {} data take {:6.3f} (ms)\n",AVG_data_size,time_diff_ms(&front,&end));
 
     clock_gettime(CLOCK_REALTIME,&front);
     clock_gettime(CLOCK_REALTIME,&end);
+
 
     // avg
     fAccUnit faccunit = 
@@ -276,24 +267,19 @@ void ADXL355::setOffset()
     };
     
     while(!dq_fAccUnitData.empty())
-    {
-        fAccUnit tmp = dq_pop_front();
-        faccunit += tmp;
-    }
+        faccunit += dq_pop_front();
 
-    faccunit/=10000;    // optimize this
+    faccunit/=AVG_data_size;    // 
     
     clock_gettime(CLOCK_REALTIME,&end);
-    diff.tv_sec = end.tv_sec - front.tv_sec;
-    diff.tv_nsec = end.tv_nsec - front.tv_nsec; //optimize this
 
-    print("Calculate average take {} (ns)\n",diff.tv_sec*1e9+diff.tv_nsec);
+    print("Calculate average take {:6.3f} (us)\n",time_diff_us(&front,&end));
     print("fX : {:6.3f}, fY : {:6.3f}, fZ : {:6.3f} \n",faccunit.fX,faccunit.fY,faccunit.fZ);
 
     fOffset foffset;
     foffset.fX = faccunit.fX;
     foffset.fY = faccunit.fY;
-    foffset.fZ = faccunit.fZ;   //optimize this
+    foffset.fZ = faccunit.fZ;   
 
     // set offset
     setOffset(foffset);
@@ -389,12 +375,9 @@ void ADXL355::_updateInBackground()
             {
                 uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
 
-                //ssize_t _len = readFifoDataSetOnce();
-                //PreParseOneAccDataUnit(readBufPtr,_len);    //origin
-
                 ssize_t _len = readAxesDataOnce(tmp_buf);
                 //ssize_t _len = readFifoDataSetOnce(tmp_buf);
-                PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    //readBufPtr here safe?
+                PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    
                 //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
 
                 _fifoINTRdyFlag = 0;
@@ -446,7 +429,6 @@ ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
         *tmp_buf = rcmd;
 
         // clean buf before send rcmd to prevent miswrite
-        
 
         int ret = wiringPiSPIDataRW(_channel,tmp_buf,len+1);
         if(ret > 0)
@@ -491,9 +473,9 @@ ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
 {
     // (2^20/2) == 524288 == acc_adc_num
     _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
-    _faccUnit->fX = ((double)_accUnit->intX) / acc_adc_num * AccMeasureRange; 
-    _faccUnit->fY = ((double)_accUnit->intY) / acc_adc_num * AccMeasureRange; 
-    _faccUnit->fZ = ((double)_accUnit->intZ) / acc_adc_num * AccMeasureRange; 
+    _faccUnit->fX = ((double)_accUnit->intX) * (1.0/ acc_adc_num) * AccMeasureRange; 
+    _faccUnit->fY = ((double)_accUnit->intY) * (1.0/ acc_adc_num) * AccMeasureRange; 
+    _faccUnit->fZ = ((double)_accUnit->intZ) * (1.0/ acc_adc_num) * AccMeasureRange; 
 
     return true;
 }
@@ -564,10 +546,12 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int typ
         // confirm data valid -- if you use polling not INT
 
         
-        uint8_t datamarker = (buf[2] | buf[5] | buf[8]) & GETMASK(DataMarkerLen,0);
-        if((datamarker != ADXL355::isX) && type == TypeFifo)
-            return true;
-        
+        if(type == TypeFifo)
+        {
+            uint8_t datamarker = (buf[2] | buf[5] | buf[8]) & GETMASK(DataMarkerLen,0);
+            if( datamarker != ADXL355::isX)
+                return false;
+        }
         
         uint32_t uintX = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4) & GETMASK(LenBitAxis,0);    // shift and confirm only 0 to 19th bits meaningful
         uint32_t uintY = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4) & GETMASK(LenBitAxis,0);
@@ -612,7 +596,7 @@ ssize_t ADXL355::readAxesDataOnce(uint8_t* tmp_buf/*9+1 bytes*/)
 
     _MyAccUnit.timestamp = _t;
 
-    // FIFO_DATA at 0x08
+    // X_3 at 0x08
     ssize_t ret = readMultiByte(0x08, LenDataSet, tmp_buf);
 
     if(ret > 0)

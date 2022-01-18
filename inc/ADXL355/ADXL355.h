@@ -15,7 +15,6 @@ extern "C" {
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 #include <signal.h>
-#include <time.h>
 }
 
 /* 
@@ -171,6 +170,8 @@ namespace LRA_ADXL355
             MAX_INSTANCE_NUM = 10,
 
             INT1 = 29,
+
+            AVG_data_size = 10000,
             
         };
 

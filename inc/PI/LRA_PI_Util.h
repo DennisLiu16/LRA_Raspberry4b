@@ -15,6 +15,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/color.h>
+#include <sys/time.h>
 
 #include <ErrorCode/LRA_ErrorCode.h>
 
@@ -50,5 +51,28 @@
             private:
 
         };
+
+        /**
+         * @brief 
+         * 
+         * @param ts 
+         * @param te 
+         * @return double (ms)
+         */
+        double static inline time_diff_ms(timespec* ts, timespec* te)
+        {
+            return ((te->tv_sec - ts->tv_sec) * 1e3 +  (te->tv_nsec - ts->tv_nsec) * 1e-6);
+        }
+
+        double static inline time_diff_us(timespec* ts,timespec* te)
+        {
+            return ((te->tv_sec - ts->tv_sec) * 1e6 +  (te->tv_nsec - ts->tv_nsec) * 1e-3);
+        }
+
+        double static inline time_diff_ns(timespec* ts,timespec* te)
+        {
+            return ((te->tv_sec - ts->tv_sec) * 1e9 +  te->tv_nsec - ts->tv_nsec);
+        }
+        
     }
 #endif
