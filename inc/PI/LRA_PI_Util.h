@@ -19,6 +19,9 @@
 
 #include <ErrorCode/LRA_ErrorCode.h>
 
+#define GETMASK(length,startbit) (((1 << length) - 1) << startbit)
+#define ABS(x) ((x ^ (x >> 31)) - (x >> 31))
+
     namespace LRA_PI_Util{
         using namespace LRA_Error;
         using namespace fmt;

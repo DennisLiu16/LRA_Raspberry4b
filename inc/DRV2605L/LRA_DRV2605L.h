@@ -255,7 +255,7 @@ namespace LRA_DRV2605L{
         C2_BLANKING_TIME_lra_235us               = 0x01,
         C2_BLANKING_TIME_lra_260us               = 0x02,
         C2_BLANKING_TIME_lra_285us               = 0x03,
-         C2_BLANKING_TIME_lra_default            = C2_BLANKING_TIME_lra_50us,
+        C2_BLANKING_TIME_lra_default            = C2_BLANKING_TIME_lra_50us,
 
         /*----------------------------------------------------------*/
         C2_IDISS_TIME_erm_45us                   = 0x00, 

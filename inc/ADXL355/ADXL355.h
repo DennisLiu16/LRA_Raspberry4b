@@ -40,8 +40,6 @@ extern "C" {
         data &= ~GETMASK(4,3);
         uint8_t wantW3To6Bits =  (target & GETMASK(4,3)) | data;
 */
-#define GETMASK(length,startbit) (((1 << length) - 1) << startbit)
-#define ABS(x) ((x ^ (x >> 31)) - (x >> 31))
 
 namespace LRA_ADXL355
 {

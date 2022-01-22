@@ -1,6 +1,6 @@
 # The first target makefile of LRA project
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 project(LRA)
 
 # global var
