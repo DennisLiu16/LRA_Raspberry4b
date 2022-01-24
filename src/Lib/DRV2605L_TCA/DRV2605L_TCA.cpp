@@ -241,6 +241,7 @@ DRV::reset()
 {
     print("No.{} device reset cmd\n", _channel);
     setBitPair(regIndex::DEV_RESET, DEV_RESET_reset,  _thisControlReg);
+    sleep(1);
 }
 
 void
@@ -559,10 +560,10 @@ DRV::switchInfo(int index, uint8_t val)
             str = (!val) ? "Passed" : "Failed";
             break;
         case OVER_TEMP:
-            str = (!val) ? "Over temperature" : "Nomral temperature";
+            str = (val) ? "Over temperature" : "Nomral temperature";
             break;
         case OC_DETECT:
-            str = (!val) ? "Over current" : "Normal current";
+            str = (val) ? "Over current" : "Normal current";
             break;
         case DEV_RESET:
             str = "Normal";
@@ -632,7 +633,7 @@ DRV::switchInfo(int index, uint8_t val)
             }
             break;
         case GO:
-            str = (!val) ? "Go" : "Stop";
+            str = (val) ? "Go" : "Stop";
             break;
         case ODT:
             str = format("Overdrive Time Offset = {:.3f} (ms)", val*getPlayBackInterval());
@@ -760,7 +761,7 @@ DRV::switchInfo(int index, uint8_t val)
         {
             bool flag = getBitPair(N_ERM_LRA);
             double drive_time = flag ? val*unit.DRIVE_TIME_LRA_ms+bias.DRIVE_TIME_LRA_ms : val*unit.DRIVE_TIME_ERM_ms+bias.DRIVE_TIME_ERM_ms;
-            str = format("Drive time = {%.3f} (ms)",drive_time);
+            str = format("Drive time = {:.3f} (ms)",drive_time);
             break;
         }
         case BIDIR_INPUT:
@@ -883,7 +884,7 @@ DRV::switchInfo(int index, uint8_t val)
             str = "";
             break;
     }
-    format("{} | {} | {:x} : {}\n",regName[index], val, val, str);
+    print("{:<20} | {:<4} | {:<5x} : {}\n",regName[index], val, val, str);
     print("\n");
 }
 
@@ -893,10 +894,6 @@ DRV::set6S()
 {
     /*TCA check*/
     TCA_selectSingleChannel(_channel);
-
-    setBitPair(DEV_RESET, DEV_RESET_reset);
-
-    usleep(1000);
 
     /*Mode*/
     setBitPair(MODE, MODE_realtime_playback);

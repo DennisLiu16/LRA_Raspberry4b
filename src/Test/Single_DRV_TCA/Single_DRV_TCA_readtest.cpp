@@ -13,8 +13,7 @@ void irq_test_0()
         ADXL355::InstanceArray[0]->_fifoINTRdyFlag = 1;
 }
 
-DRV2605L_TCA Xdrv(25, 0);
-ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
+DRV2605L_TCA Xdrv;
 
 void signal_handler(int signum)
 {
@@ -35,6 +34,8 @@ int main()
     }
 
     wiringPiSetup();
+    DRV2605L_TCA Xdrv(25, 0);
+    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
     Xdrv.set6S();
-
+    Xdrv.printAllRegIndex();
 }

@@ -5,6 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(gdb) single_drv",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/Test/Single_DRV_TCA/Single_DRV_TCA_readtest",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description":  "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        
+        
+
+
+        {
             "name": "(gdb) spi_test",
             "type": "cppdbg",
             "request": "launch",
