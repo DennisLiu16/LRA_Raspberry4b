@@ -19,6 +19,7 @@ using DRV = DRV2605L_TCA;
 int DRV::_drvNum = 0;
 int DRV::_bus = -1;
 uint8_t DRV::_controlReg = 0;
+I2CDevice DRV::i2c_TCA;
 
 //////////
 /*public*/
