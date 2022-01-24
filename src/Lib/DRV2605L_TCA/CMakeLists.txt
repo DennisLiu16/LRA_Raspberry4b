@@ -5,6 +5,6 @@ find_library(wiringPi_LIB wiringPi)
 
 target_link_libraries(DRV2605L_TCA ${wiringPi_LIB})
 target_include_directories(DRV2605L_TCA PUBLIC ${CMAKE_INCLUDE_PATH})
-#target_compile_features(DRV2605L_TCA PUBLIC cxx_std_17)
+target_compile_features(DRV2605L_TCA PUBLIC cxx_std_17)
 
 

@@ -36,6 +36,7 @@ namespace LRA_DRV2605L_TCA
             // I2C slave id (slave device address)
             TCA_SLAVE_ID = 0x70,
             DRV_SLAVE_ID = 0x5a,
+            TCA_REGADDR  = 0x00,
 
             // TCA9548A channel
             LRA_X_ch = 0,
@@ -58,75 +59,78 @@ namespace LRA_DRV2605L_TCA
             MODE = 6,
             RTP_INPUT = 7,
             HI_Z = 8,
-            LIBRARY_SEL2 = 9,
-            LIBRARY_SEL1 = 10,
-            LIBRARY_SEL0 = 11,
-            WAIT1 = 12,
-            WAV_FRM_SEQ1 = 13,
-            WAIT2 = 14,
-            WAV_FRM_SEQ2 = 15,
-            WAIT3 = 16,
-            WAV_FRM_SEQ3 = 17,
-            WAIT4 = 18,
-            WAV_FRM_SEQ4 = 19,
-            WAIT5 = 20,
-            WAV_FRM_SEQ5 = 21,
-            WAIT6 = 22,
-            WAV_FRM_SEQ6 = 23,
-            WAIT7 = 24,
-            WAV_FRM_SEQ7 = 25,
-            WAIT8 = 26,
-            WAV_FRM_SEQ8 = 27,
-            GO = 28,
-            ODT = 29,
-            SPT = 30,
-            SNT = 31,
-            BRT = 32,
-            ATH_PEAK_TIME = 33,
-            ATH_FILTER = 34,
-            ATH_MIN_INPUT = 35,
-            ATH_MAX_INPUT = 36,
-            ATH_MIN_DRIVE = 37,
-            ATH_MAX_DRIVE = 38,
-            RATED_VOLTAGE = 39,
-            OD_CLAMP = 40,
-            A_CAL_COMP = 41,
-            A_CAL_BEMF = 42,
-            N_ERM_LRA = 43,
-            FB_BRAKE_FACTOR = 44,
-            LOOP_GAIN = 45,
-            BEMF_GAIN = 46,
-            STARTUP_BOOST = 47,
-            AC_COUPLE = 48,
-            DRIVE_TIME = 49,        // best ~ 0.5*LRA_PERIOD, p44
-            BIDIR_INPUT = 50,
-            BRAKE_STABILIZER = 51,
-            SAMPLE_TIME = 52,
-            BLANKING_TIME0 = 53,
-            IDISS_TIME0 = 54,
-            NG_THRESH = 55,
-            ERM_OPEN_LOOP = 56,
-            SUPPLY_COMP_DIS = 57,
-            DATA_FORMAT_RTP = 58,
-            LRA_DRIVE_MODE = 59,
-            N_PWM_ANALOG = 60,
-            LRA_OPEN_LOOP = 61,
-            ZC_DET_TIME = 62,
-            AUTO_CAL_TIME = 63,
-            OTP_STATUS = 64,
-            OTP_PROGRAM = 65,
-            AUTO_OL_CNT = 66,
-            LRA_AUTO_OPEN_LOOP = 67,
-            PLAYBACK_INTERVAL = 68,
-            BLANKING_TIME1 = 69,
-            IDISS_TIME1 = 70,
-            OL_LRA_PERIOD = 71,
-            VBAT = 72,
-            LRA_PERIOD = 73,
+            //LIBRARY_SEL2 = 9,   // abandon
+            //LIBRARY_SEL1 = 10,  // abandon
+            LIBRARY_SEL = 9,
+            WAIT1 = 10,
+            WAV_FRM_SEQ1 = 11,
+            WAIT2 = 12,
+            WAV_FRM_SEQ2 = 13,
+            WAIT3 = 14,
+            WAV_FRM_SEQ3 = 15,
+            WAIT4 = 16,
+            WAV_FRM_SEQ4 = 17,
+            WAIT5 = 18,
+            WAV_FRM_SEQ5 = 19,
+            WAIT6 = 20,
+            WAV_FRM_SEQ6 = 21,
+            WAIT7 = 22,
+            WAV_FRM_SEQ7 = 23,
+            WAIT8 = 24,
+            WAV_FRM_SEQ8 = 25,
+            GO = 26,
+            ODT = 27,
+            SPT = 28,
+            SNT = 29,
+            BRT = 30,
+            ATH_PEAK_TIME = 31,
+            ATH_FILTER = 32,
+            ATH_MIN_INPUT = 33,
+            ATH_MAX_INPUT = 34,
+            ATH_MIN_DRIVE = 35,
+            ATH_MAX_DRIVE = 36,
+            RATED_VOLTAGE = 37,
+            OD_CLAMP = 38,
+            A_CAL_COMP = 39,
+            A_CAL_BEMF = 40,
+            N_ERM_LRA = 41,
+            FB_BRAKE_FACTOR = 42,
+            LOOP_GAIN = 43,
+            BEMF_GAIN = 44,
+            STARTUP_BOOST = 45,
+            AC_COUPLE = 46,
+            DRIVE_TIME = 47,        // best ~ 0.5*LRA_PERIOD, p44
+            BIDIR_INPUT = 48,
+            BRAKE_STABILIZER = 49,
+            SAMPLE_TIME = 50,
+            BLANKING_TIME0 = 51,
+            IDISS_TIME0 = 52,
+            NG_THRESH = 53,
+            ERM_OPEN_LOOP = 54,
+            SUPPLY_COMP_DIS = 55,
+            DATA_FORMAT_RTP = 56,
+            LRA_DRIVE_MODE = 57,
+            N_PWM_ANALOG = 58,
+            LRA_OPEN_LOOP = 59,
+            ZC_DET_TIME = 60,
+            AUTO_CAL_TIME = 61,
+            OTP_STATUS = 62,
+            OTP_PROGRAM = 63,
+            AUTO_OL_CNT = 64,
+            LRA_AUTO_OPEN_LOOP = 65,
+            PLAYBACK_INTERVAL = 66,
+            BLANKING_TIME1 = 67,
+            IDISS_TIME1 = 68,
+            OL_LRA_PERIOD = 69,
+            VBAT = 70,
+            LRA_PERIOD = 71,
 
             /*You can extend your register here*/
 
-            NUM_REG
+            NUM_REG,
+
+            IndexMax = NUM_REG -1,
+            AddrMax = 0x22,
         }regIndex;
 
         typedef enum{
@@ -368,9 +372,49 @@ namespace LRA_DRV2605L_TCA
             IDISS_TIME1_lra_235us               = 0x03,
             IDISS_TIME1_lra_260us               = 0x03,
             IDISS_TIME1_lra_285us               = 0x03,
+            BLANKING_TIME_erm_45us              = 0x00,
+            BLANKING_TIME_erm_75us              = 0x01,
+            BLANKING_TIME_erm_150us             = 0x02,
+            BLANKING_TIME_erm_225us             = 0x03,
+            BLANKING_TIME_lra_15us              = 0x00,
+            BLANKING_TIME_lra_25us              = 0x01,
+            BLANKING_TIME_lra_50us              = 0x02,
+            BLANKING_TIME_lra_75us              = 0x03,
+            BLANKING_TIME_lra_90us              = 0x04,
+            BLANKING_TIME_lra_105us             = 0x05,
+            BLANKING_TIME_lra_120us             = 0x06,
+            BLANKING_TIME_lra_135us             = 0x07,
+            BLANKING_TIME_lra_150us             = 0x08,
+            BLANKING_TIME_lra_165us             = 0x09,
+            BLANKING_TIME_lra_180us             = 0x0A,
+            BLANKING_TIME_lra_195us             = 0x0B,
+            BLANKING_TIME_lra_210us             = 0x0C,
+            BLANKING_TIME_lra_235us             = 0x0D,
+            BLANKING_TIME_lra_260us             = 0x0E,
+            BLANKING_TIME_lra_285us             = 0x0F,
+            IDISS_TIME_erm_45us                 = 0x00,
+            IDISS_TIME_erm_75us                 = 0x01,
+            IDISS_TIME_erm_150us                = 0x02,
+            IDISS_TIME_erm_225us                = 0x03,
+            IDISS_TIME_lra_15us                 = 0x00,
+            IDISS_TIME_lra_25us                 = 0x01,
+            IDISS_TIME_lra_50us                 = 0x02,
+            IDISS_TIME_lra_75us                 = 0x03,
+            IDISS_TIME_lra_90us                 = 0x04,
+            IDISS_TIME_lra_105us                = 0x05,
+            IDISS_TIME_lra_120us                = 0x06,
+            IDISS_TIME_lra_135us                = 0x07,
+            IDISS_TIME_lra_150us                = 0x08,
+            IDISS_TIME_lra_165us                = 0x09,
+            IDISS_TIME_lra_180us                = 0x0A,
+            IDISS_TIME_lra_195us                = 0x0B,
+            IDISS_TIME_lra_210us                = 0x0C,
+            IDISS_TIME_lra_235us                = 0x0D,
+            IDISS_TIME_lra_260us                = 0x0E,
+            IDISS_TIME_lra_285us                = 0x0F,
         }Val;
 
-        typedef const struct Units{
+        typedef const struct{
             double WAIT_ms = 10.0;                      /*ms, p37*/
             double ATH_INPUT_V = 1.8;                   /*voltage, p40*/
             double AUTO_CALIBRATION_BACK_EMF_V = 1.22;  /*voltage, p42*/
@@ -381,7 +425,7 @@ namespace LRA_DRV2605L_TCA
 
         }Units;
 
-        typedef const struct Bias{
+        typedef const struct{
             double AUTO_CALIBRATION_COMP_COEFF = 1.0;   /*unit, p42*/
             double DRIVE_TIME_LRA_ms = 0.5;             /*ms, p44*/
             double DRIVE_TIME_ERM_ms = 1.0;             /*ms, p44*/
@@ -397,71 +441,69 @@ namespace LRA_DRV2605L_TCA
             /*MODE = 6,*/               0x01,
             /*RTP_INPUT = 7,*/          0x02,
             /*HI_Z = 8,*/               0x03,
-            /*LIBRARY_SEL2 = 9,*/       0x03,
-            /*LIBRARY_SEL1 = 10,*/      0x03,
-            /*LIBRARY_SEL0 = 11,*/      0x03,
-            /*WAIT1 = 12,*/             0x04,
-            /*WAV_FRM_SEQ1 = 13,*/      0x04,
-            /*WAIT2 = 14,*/             0x05, 
-            /*WAV_FRM_SEQ2 = 15,*/      0x05,
-            /*WAIT3 = 16,*/             0x06,
-            /*WAV_FRM_SEQ3 = 17,*/      0x06,
-            /*WAIT4 = 18,*/             0x07,
-            /*WAV_FRM_SEQ4 = 19,*/      0x07,
-            /*WAIT5 = 20,*/             0x08,
-            /*WAV_FRM_SEQ5 = 21,*/      0x08,    
-            /*WAIT6 = 22,*/             0x09,
-            /*WAV_FRM_SEQ6 = 23,*/      0x09,
-            /*WAIT7 = 24,*/             0x0A,
-            /*WAV_FRM_SEQ7 = 25,*/      0x0A,
-            /*WAIT8 = 26,*/             0x0B,
-            /*WAV_FRM_SEQ8 = 27,*/      0x0B,
-            /*GO = 28,*/                0x0C,
-            /*ODT = 29,*/               0x0D,
-            /*SPT = 30,*/               0x0E,
-            /*SNT = 31,*/               0x0F,
-            /*BRT = 32,*/               0x10,
-            /*ATH_PEAK_TIME = 33,*/     0x11,
-            /*ATH_FILTER = 34,*/        0x11,
-            /*ATH_MIN_INPUT = 35,*/     0x12,
-            /*ATH_MAX_INPUT = 36,*/     0x13,
-            /*ATH_MIN_DRIVE = 37,*/     0x14,
-            /*ATH_MAX_DRIVE = 38,*/     0x15,
-            /*RATED_VOLTAGE = 39,*/     0x16,
-            /*OD_CLAMP = 40,*/          0x17,        
-            /*A_CAL_COMP = 41,*/        0x18,
-            /*A_CAL_BEMF = 42,*/        0x19,
-            /*N_ERM_LRA = 43,*/         0x1A,
-            /*FB_BRAKE_FACTOR = 44,*/   0x1A,
-            /*LOOP_GAIN = 45,*/         0x1A,
-            /*BEMF_GAIN = 46,*/         0x1A,
-            /*STARTUP_BOOST = 47,*/     0x1B,
-            /*AC_COUPLE = 48,*/         0x1B,
-            /*DRIVE_TIME = 49,*/        0x1B,
-            /*BIDIR_INPUT = 50,*/       0x1C,
-            /*BRAKE_STABILIZER = 51,*/  0x1C,
-            /*SAMPLE_TIME = 52,*/       0x1C,
-            /*BLANKING_TIME0 = 53,*/    0x1C,
-            /*IDISS_TIME0 = 54,*/       0x1C,
-            /*NG_THRESH = 55,*/         0x1D,
-            /*ERM_OPEN_LOOP = 56,*/     0x1D,
-            /*SUPPLY_COMP_DIS = 57,*/   0x1D,
-            /*DATA_FORMAT_RTP = 58,*/   0x1D,
-            /*LRA_DRIVE_MODE = 59,*/    0x1D,
-            /*N_PWM_ANALOG = 60,*/      0x1D,
-            /*LRA_OPEN_LOOP = 61,*/     0x1D,
-            /*ZC_DET_TIME = 62,*/       0x1E,
-            /*AUTO_CAL_TIME = 63,*/     0x1E,
-            /*OTP_STATUS = 64,*/        0x1E,
-            /*OTP_PROGRAM = 65,*/       0x1E,
-            /*AUTO_OL_CNT = 66,*/       0x1F,
-            /*LRA_AUTO_OPEN_LOOP = 67,*/0x1F,
-            /*PLAYBACK_INTERVAL = 68,*/ 0x1F,
-            /*BLANKING_TIME1 = 69,*/    0x1F,
-            /*IDISS_TIME1 = 70,*/       0x1F,
-            /*OL_LRA_PERIOD = 71,*/     0x20,
-            /*VBAT = 72,*/              0x21,
-            /*LRA_PERIOD = 73,*/        0x22,
+            /*LIBRARY_SEL = 9,*/        0x03,
+            /*WAIT1 = 10,*/             0x04,
+            /*WAV_FRM_SEQ1 = 11,*/      0x04,
+            /*WAIT2 = 12,*/             0x05, 
+            /*WAV_FRM_SEQ2 = 13,*/      0x05,
+            /*WAIT3 = 14,*/             0x06,
+            /*WAV_FRM_SEQ3 = 15,*/      0x06,
+            /*WAIT4 = 16,*/             0x07,
+            /*WAV_FRM_SEQ4 = 17,*/      0x07,
+            /*WAIT5 = 18,*/             0x08,
+            /*WAV_FRM_SEQ5 = 19,*/      0x08,    
+            /*WAIT6 = 20,*/             0x09,
+            /*WAV_FRM_SEQ6 = 21,*/      0x09,
+            /*WAIT7 = 22,*/             0x0A,
+            /*WAV_FRM_SEQ7 = 23,*/      0x0A,
+            /*WAIT8 = 24,*/             0x0B,
+            /*WAV_FRM_SEQ8 = 25,*/      0x0B,
+            /*GO = 26,*/                0x0C,
+            /*ODT = 27,*/               0x0D,
+            /*SPT = 28,*/               0x0E,
+            /*SNT = 29,*/               0x0F,
+            /*BRT = 30,*/               0x10,
+            /*ATH_PEAK_TIME = 31,*/     0x11,
+            /*ATH_FILTER = 32,*/        0x11,
+            /*ATH_MIN_INPUT = 33,*/     0x12,
+            /*ATH_MAX_INPUT = 34,*/     0x13,
+            /*ATH_MIN_DRIVE = 35,*/     0x14,
+            /*ATH_MAX_DRIVE = 36,*/     0x15,
+            /*RATED_VOLTAGE = 37,*/     0x16,
+            /*OD_CLAMP = 38,*/          0x17,        
+            /*A_CAL_COMP = 39,*/        0x18,
+            /*A_CAL_BEMF = 40,*/        0x19,
+            /*N_ERM_LRA = 41,*/         0x1A,
+            /*FB_BRAKE_FACTOR = 42,*/   0x1A,
+            /*LOOP_GAIN = 43,*/         0x1A,
+            /*BEMF_GAIN = 44,*/         0x1A,
+            /*STARTUP_BOOST = 45,*/     0x1B,
+            /*AC_COUPLE = 46,*/         0x1B,
+            /*DRIVE_TIME = 47,*/        0x1B,
+            /*BIDIR_INPUT = 48,*/       0x1C,
+            /*BRAKE_STABILIZER = 49,*/  0x1C,
+            /*SAMPLE_TIME = 50,*/       0x1C,
+            /*BLANKING_TIME0 = 51,*/    0x1C,
+            /*IDISS_TIME0 = 52,*/       0x1C,
+            /*NG_THRESH = 53,*/         0x1D,
+            /*ERM_OPEN_LOOP = 54,*/     0x1D,
+            /*SUPPLY_COMP_DIS = 55,*/   0x1D,
+            /*DATA_FORMAT_RTP = 56,*/   0x1D,
+            /*LRA_DRIVE_MODE = 57,*/    0x1D,
+            /*N_PWM_ANALOG = 58,*/      0x1D,
+            /*LRA_OPEN_LOOP = 59,*/     0x1D,
+            /*ZC_DET_TIME = 60,*/       0x1E,
+            /*AUTO_CAL_TIME = 61,*/     0x1E,
+            /*OTP_STATUS = 62,*/        0x1E,
+            /*OTP_PROGRAM = 63,*/       0x1E,
+            /*AUTO_OL_CNT = 64,*/       0x1F,
+            /*LRA_AUTO_OPEN_LOOP = 65,*/0x1F,
+            /*PLAYBACK_INTERVAL = 66,*/ 0x1F,
+            /*BLANKING_TIME1 = 67,*/    0x1F,
+            /*IDISS_TIME1 = 68,*/       0x1F,
+            /*OL_LRA_PERIOD = 69,*/     0x20,
+            /*VBAT = 70,*/              0x21,
+            /*LRA_PERIOD = 71,*/        0x22,
         };
 
         const uint8_t startbit[NUM_REG] = {
@@ -474,71 +516,69 @@ namespace LRA_DRV2605L_TCA
             /*MODE = 6,*/               0,
             /*RTP_INPUT = 7,*/          0,
             /*HI_Z = 8,*/               4,
-            /*LIBRARY_SEL2 = 9,*/       2,
-            /*LIBRARY_SEL1 = 10,*/      1,
-            /*LIBRARY_SEL0 = 11,*/      0,
-            /*WAIT1 = 12,*/             7,
-            /*WAV_FRM_SEQ1 = 13,*/      0,
-            /*WAIT2 = 14,*/             7,
-            /*WAV_FRM_SEQ2 = 15,*/      0,
-            /*WAIT3 = 16,*/             7,
-            /*WAV_FRM_SEQ3 = 17,*/      0,
-            /*WAIT4 = 18,*/             7,
-            /*WAV_FRM_SEQ4 = 19,*/      0,
-            /*WAIT5 = 20,*/             7,
-            /*WAV_FRM_SEQ5 = 21,*/      0,
-            /*WAIT6 = 22,*/             7,
-            /*WAV_FRM_SEQ6 = 23,*/      0,
-            /*WAIT7 = 24,*/             7,
-            /*WAV_FRM_SEQ7 = 25,*/      0,
-            /*WAIT8 = 26,*/             7,
-            /*WAV_FRM_SEQ8 = 27,*/      0,
-            /*GO = 28,*/                0,
-            /*ODT = 29,*/               0,
-            /*SPT = 30,*/               0,
-            /*SNT = 31,*/               0,
-            /*BRT = 32,*/               0,
-            /*ATH_PEAK_TIME = 33,*/     2,
-            /*ATH_FILTER = 34,*/        0,
-            /*ATH_MIN_INPUT = 35,*/     0,
-            /*ATH_MAX_INPUT = 36,*/     0,
-            /*ATH_MIN_DRIVE = 37,*/     0,
-            /*ATH_MAX_DRIVE = 38,*/     0,
-            /*RATED_VOLTAGE = 39,*/     0,
-            /*OD_CLAMP = 40,*/          0,
-            /*A_CAL_COMP = 41,*/        0,
-            /*A_CAL_BEMF = 42,*/        0,
-            /*N_ERM_LRA = 43,*/         7,
-            /*FB_BRAKE_FACTOR = 44,*/   4,
-            /*LOOP_GAIN = 45,*/         2,
-            /*BEMF_GAIN = 46,*/         0,
-            /*STARTUP_BOOST = 47,*/     7,
-            /*AC_COUPLE = 48,*/         5,
-            /*DRIVE_TIME = 49,*/        0,
-            /*BIDIR_INPUT = 50,*/       7,
-            /*BRAKE_STABILIZER = 51,*/  6,
-            /*SAMPLE_TIME = 52,*/       4,
-            /*BLANKING_TIME0 = 53,*/    2,
-            /*IDISS_TIME0 = 54,*/       0,
-            /*NG_THRESH = 55,*/         6,
-            /*ERM_OPEN_LOOP = 56,*/     5,
-            /*SUPPLY_COMP_DIS = 57,*/   4,
-            /*DATA_FORMAT_RTP = 58,*/   3,
-            /*LRA_DRIVE_MODE = 59,*/    2,
-            /*N_PWM_ANALOG = 60,*/      1,
-            /*LRA_OPEN_LOOP = 61,*/     0,
-            /*ZC_DET_TIME = 62,*/       6,
-            /*AUTO_CAL_TIME = 63,*/     4,
-            /*OTP_STATUS = 64,*/        2,
-            /*OTP_PROGRAM = 65,*/       0,
-            /*AUTO_OL_CNT = 66,*/       6,
-            /*LRA_AUTO_OPEN_LOOP = 67,*/5,
-            /*PLAYBACK_INTERVAL = 68,*/ 4,
-            /*BLANKING_TIME1 = 69,*/    2,
-            /*IDISS_TIME1 = 70,*/       0,
-            /*OL_LRA_PERIOD = 71,*/     0,
-            /*VBAT = 72,*/              0,
-            /*LRA_PERIOD = 73,*/        0,
+            /*LIBRARY_SEL = 9,*/        0,
+            /*WAIT1 = 10,*/             7,
+            /*WAV_FRM_SEQ1 = 11,*/      0,
+            /*WAIT2 = 12,*/             7,
+            /*WAV_FRM_SEQ2 = 13,*/      0,
+            /*WAIT3 = 14,*/             7,
+            /*WAV_FRM_SEQ3 = 15,*/      0,
+            /*WAIT4 = 16,*/             7,
+            /*WAV_FRM_SEQ4 = 17,*/      0,
+            /*WAIT5 = 18,*/             7,
+            /*WAV_FRM_SEQ5 = 19,*/      0,
+            /*WAIT6 = 20,*/             7,
+            /*WAV_FRM_SEQ6 = 21,*/      0,
+            /*WAIT7 = 22,*/             7,
+            /*WAV_FRM_SEQ7 = 23,*/      0,
+            /*WAIT8 = 24,*/             7,
+            /*WAV_FRM_SEQ8 = 25,*/      0,
+            /*GO = 26,*/                0,
+            /*ODT = 27,*/               0,
+            /*SPT = 28,*/               0,
+            /*SNT = 29,*/               0,
+            /*BRT = 30,*/               0,
+            /*ATH_PEAK_TIME = 31,*/     2,
+            /*ATH_FILTER = 32,*/        0,
+            /*ATH_MIN_INPUT = 33,*/     0,
+            /*ATH_MAX_INPUT = 34,*/     0,
+            /*ATH_MIN_DRIVE = 35,*/     0,
+            /*ATH_MAX_DRIVE = 36,*/     0,
+            /*RATED_VOLTAGE = 37,*/     0,
+            /*OD_CLAMP = 38,*/          0,
+            /*A_CAL_COMP = 39,*/        0,
+            /*A_CAL_BEMF = 40,*/        0,
+            /*N_ERM_LRA = 41,*/         7,
+            /*FB_BRAKE_FACTOR = 42,*/   4,
+            /*LOOP_GAIN = 43,*/         2,
+            /*BEMF_GAIN = 44,*/         0,
+            /*STARTUP_BOOST = 45,*/     7,
+            /*AC_COUPLE = 46,*/         5,
+            /*DRIVE_TIME = 47,*/        0,
+            /*BIDIR_INPUT = 48,*/       7,
+            /*BRAKE_STABILIZER = 49,*/  6,
+            /*SAMPLE_TIME = 50,*/       4,
+            /*BLANKING_TIME0 = 51,*/    2,
+            /*IDISS_TIME0 = 52,*/       0,
+            /*NG_THRESH = 53,*/         6,
+            /*ERM_OPEN_LOOP = 54,*/     5,
+            /*SUPPLY_COMP_DIS = 55,*/   4,
+            /*DATA_FORMAT_RTP = 56,*/   3,
+            /*LRA_DRIVE_MODE = 57,*/    2,
+            /*N_PWM_ANALOG = 58,*/      1,
+            /*LRA_OPEN_LOOP = 59,*/     0,
+            /*ZC_DET_TIME = 60,*/       6,
+            /*AUTO_CAL_TIME = 61,*/     4,
+            /*OTP_STATUS = 62,*/        2,
+            /*OTP_PROGRAM = 63,*/       0,
+            /*AUTO_OL_CNT = 64,*/       6,
+            /*LRA_AUTO_OPEN_LOOP = 65,*/5,
+            /*PLAYBACK_INTERVAL = 66,*/ 4,
+            /*BLANKING_TIME1 = 67,*/    2,
+            /*IDISS_TIME1 = 68,*/       0,
+            /*OL_LRA_PERIOD = 69,*/     0,
+            /*VBAT = 70,*/              0,
+            /*LRA_PERIOD = 71,*/        0,
 
             /*Extend here*/
         };
@@ -553,71 +593,145 @@ namespace LRA_DRV2605L_TCA
             /*MODE = 6,*/               3,
             /*RTP_INPUT = 7,*/          8,
             /*HI_Z = 8,*/               1,
-            /*LIBRARY_SEL2 = 9,*/       1,
-            /*LIBRARY_SEL1 = 10,*/      1,
-            /*LIBRARY_SEL0 = 11,*/      1,
-            /*WAIT1 = 12,*/             1,
-            /*WAV_FRM_SEQ1 = 13,*/      7,
-            /*WAIT2 = 14,*/             1,
-            /*WAV_FRM_SEQ2 = 15,*/      7,
-            /*WAIT3 = 16,*/             1,
-            /*WAV_FRM_SEQ3 = 17,*/      7,
-            /*WAIT4 = 18,*/             1,
-            /*WAV_FRM_SEQ4 = 19,*/      7,
-            /*WAIT5 = 20,*/             1,
-            /*WAV_FRM_SEQ5 = 21,*/      7,
-            /*WAIT6 = 22,*/             1,
-            /*WAV_FRM_SEQ6 = 23,*/      7,
-            /*WAIT7 = 24,*/             1,
-            /*WAV_FRM_SEQ7 = 25,*/      7,
-            /*WAIT8 = 26,*/             1,
-            /*WAV_FRM_SEQ8 = 27,*/      7,
-            /*GO = 28,*/                1,
-            /*ODT = 29,*/               8,
-            /*SPT = 30,*/               8,
-            /*SNT = 31,*/               8,
-            /*BRT = 32,*/               8,
-            /*ATH_PEAK_TIME = 33,*/     2,
-            /*ATH_FILTER = 34,*/        2,
-            /*ATH_MIN_INPUT = 35,*/     8,
-            /*ATH_MAX_INPUT = 36,*/     8,
-            /*ATH_MIN_DRIVE = 37,*/     8,
-            /*ATH_MAX_DRIVE = 38,*/     8,
-            /*RATED_VOLTAGE = 39,*/     8,
-            /*OD_CLAMP = 40,*/          8,
-            /*A_CAL_COMP = 41,*/        8,
-            /*A_CAL_BEMF = 42,*/        8,
-            /*N_ERM_LRA = 43,*/         1,
-            /*FB_BRAKE_FACTOR = 44,*/   3,
-            /*LOOP_GAIN = 45,*/         2,
-            /*BEMF_GAIN = 46,*/         2,
-            /*STARTUP_BOOST = 47,*/     1,
-            /*AC_COUPLE = 48,*/         1,
-            /*DRIVE_TIME = 49,*/        5,
-            /*BIDIR_INPUT = 50,*/       1,
-            /*BRAKE_STABILIZER = 51,*/  1,
-            /*SAMPLE_TIME = 52,*/       2,
-            /*BLANKING_TIME0 = 53,*/    2,
-            /*IDISS_TIME0 = 54,*/       2,
-            /*NG_THRESH = 55,*/         2,
-            /*ERM_OPEN_LOOP = 56,*/     1,
-            /*SUPPLY_COMP_DIS = 57,*/   1,
-            /*DATA_FORMAT_RTP = 58,*/   1,
-            /*LRA_DRIVE_MODE = 59,*/    1,
-            /*N_PWM_ANALOG = 60,*/      1,
-            /*LRA_OPEN_LOOP = 61,*/     1,
-            /*ZC_DET_TIME = 62,*/       2,
-            /*AUTO_CAL_TIME = 63,*/     2,
-            /*OTP_STATUS = 64,*/        1,
-            /*OTP_PROGRAM = 65,*/       1,
-            /*AUTO_OL_CNT = 66,*/       2,
-            /*LRA_AUTO_OPEN_LOOP = 67,*/1,
-            /*PLAYBACK_INTERVAL = 68,*/ 1,
-            /*BLANKING_TIME1 = 69,*/    2,
-            /*IDISS_TIME1 = 70,*/       2,
-            /*OL_LRA_PERIOD = 71,*/     7,
-            /*VBAT = 72,*/              8,
-            /*LRA_PERIOD = 73,*/        8,
+            /*LIBRARY_SEL = 9,*/        3,
+            /*WAIT1 = 10,*/             1,
+            /*WAV_FRM_SEQ1 = 11,*/      7,
+            /*WAIT2 = 12,*/             1,
+            /*WAV_FRM_SEQ2 = 13,*/      7,
+            /*WAIT3 = 14,*/             1,
+            /*WAV_FRM_SEQ3 = 15,*/      7,
+            /*WAIT4 = 16,*/             1,
+            /*WAV_FRM_SEQ4 = 17,*/      7,
+            /*WAIT5 = 18,*/             1,
+            /*WAV_FRM_SEQ5 = 19,*/      7,
+            /*WAIT6 = 20,*/             1,
+            /*WAV_FRM_SEQ6 = 21,*/      7,
+            /*WAIT7 = 22,*/             1,
+            /*WAV_FRM_SEQ7 = 23,*/      7,
+            /*WAIT8 = 24,*/             1,
+            /*WAV_FRM_SEQ8 = 25,*/      7,
+            /*GO = 26,*/                1,
+            /*ODT = 27,*/               8,
+            /*SPT = 28,*/               8,
+            /*SNT = 29,*/               8,
+            /*BRT = 30,*/               8,
+            /*ATH_PEAK_TIME = 31,*/     2,
+            /*ATH_FILTER = 32,*/        2,
+            /*ATH_MIN_INPUT = 33,*/     8,
+            /*ATH_MAX_INPUT = 34,*/     8,
+            /*ATH_MIN_DRIVE = 35,*/     8,
+            /*ATH_MAX_DRIVE = 36,*/     8,
+            /*RATED_VOLTAGE = 37,*/     8,
+            /*OD_CLAMP = 38,*/          8,
+            /*A_CAL_COMP = 39,*/        8,
+            /*A_CAL_BEMF = 40,*/        8,
+            /*N_ERM_LRA = 41,*/         1,
+            /*FB_BRAKE_FACTOR = 42,*/   3,
+            /*LOOP_GAIN = 43,*/         2,
+            /*BEMF_GAIN = 44,*/         2,
+            /*STARTUP_BOOST = 45,*/     1,
+            /*AC_COUPLE = 46,*/         1,
+            /*DRIVE_TIME = 47,*/        5,
+            /*BIDIR_INPUT = 48,*/       1,
+            /*BRAKE_STABILIZER = 49,*/  1,
+            /*SAMPLE_TIME = 50,*/       2,
+            /*BLANKING_TIME0 = 51,*/    2,
+            /*IDISS_TIME0 = 52,*/       2,
+            /*NG_THRESH = 53,*/         2,
+            /*ERM_OPEN_LOOP = 54,*/     1,
+            /*SUPPLY_COMP_DIS = 55,*/   1,
+            /*DATA_FORMAT_RTP = 56,*/   1,
+            /*LRA_DRIVE_MODE = 57,*/    1,
+            /*N_PWM_ANALOG = 58,*/      1,
+            /*LRA_OPEN_LOOP = 59,*/     1,
+            /*ZC_DET_TIME = 60,*/       2,
+            /*AUTO_CAL_TIME = 61,*/     2,
+            /*OTP_STATUS = 62,*/        1,
+            /*OTP_PROGRAM = 63,*/       1,
+            /*AUTO_OL_CNT = 64,*/       2,
+            /*LRA_AUTO_OPEN_LOOP = 65,*/1,
+            /*PLAYBACK_INTERVAL = 66,*/ 1,
+            /*BLANKING_TIME1 = 67,*/    2,
+            /*IDISS_TIME1 = 68,*/       2,
+            /*OL_LRA_PERIOD = 69,*/     7,
+            /*VBAT = 70,*/              8,
+            /*LRA_PERIOD = 71,*/        8,
+        };
+
+        const std::string regName[NUM_REG]
+        {
+            /*DEVICE_ID = 0, */         "DEVICE_ID",
+            /*DIAG_RESULT = 1,*/        "DIAG_RESULT",
+            /*OVER_TEMP = 2,*/          "OVER_TEMP",
+            /*OC_DETECT = 3,*/          "OC_DETECT",
+            /*DEV_RESET = 4,*/          "DEV_RESET",
+            /*STANDBY = 5,*/            "STANDBY",
+            /*MODE = 6,*/               "MODE",
+            /*RTP_INPUT = 7,*/          "RTP_INPUT",
+            /*HI_Z = 8,*/               "HI_Z",
+            /*LIBRARY_SEL = 9,*/        "LIBRARY_SEL",
+            /*WAIT1 = 10,*/             "WAIT1",
+            /*WAV_FRM_SEQ1 = 11,*/      "WAV_FRM_SEQ1",
+            /*WAIT2 = 12,*/             "WAIT2",
+            /*WAV_FRM_SEQ2 = 13,*/      "WAV_FRM_SEQ2",
+            /*WAIT3 = 14,*/             "WAIT3",
+            /*WAV_FRM_SEQ3 = 15,*/      "WAV_FRM_SEQ3",
+            /*WAIT4 = 16,*/             "WAIT4",
+            /*WAV_FRM_SEQ4 = 17,*/      "WAV_FRM_SEQ4",
+            /*WAIT5 = 18,*/             "WAIT5",
+            /*WAV_FRM_SEQ5 = 19,*/      "WAV_FRM_SEQ5",
+            /*WAIT6 = 20,*/             "WAIT6 = 20",
+            /*WAV_FRM_SEQ6 = 21,*/      "WAV_FRM_SEQ6",
+            /*WAIT7 = 22,*/             "WAIT7 = 22",
+            /*WAV_FRM_SEQ7 = 23,*/      "WAV_FRM_SEQ7",
+            /*WAIT8 = 24,*/             "WAIT8",
+            /*WAV_FRM_SEQ8 = 25,*/      "WAV_FRM_SEQ8",
+            /*GO = 26,*/                "GO",
+            /*ODT = 27,*/               "ODT",
+            /*SPT = 28,*/               "SPT",
+            /*SNT = 29,*/               "SNT",
+            /*BRT = 30,*/               "BRT",
+            /*ATH_PEAK_TIME = 31,*/     "ATH_PEAK_TIME",
+            /*ATH_FILTER = 32,*/        "ATH_FILTER",
+            /*ATH_MIN_INPUT = 33,*/     "ATH_MIN_INPUT",
+            /*ATH_MAX_INPUT = 34,*/     "ATH_MAX_INPUT",
+            /*ATH_MIN_DRIVE = 35,*/     "ATH_MIN_DRIVE",
+            /*ATH_MAX_DRIVE = 36,*/     "ATH_MAX_DRIVE",
+            /*RATED_VOLTAGE = 37,*/     "RATED_VOLTAGE",
+            /*OD_CLAMP = 38,*/          "OD_CLAMP",
+            /*A_CAL_COMP = 39,*/        "A_CAL_COMP",
+            /*A_CAL_BEMF = 40,*/        "A_CAL_BEMF",
+            /*N_ERM_LRA = 41,*/         "N_ERM_LRA",
+            /*FB_BRAKE_FACTOR = 42,*/   "FB_BRAKE_FACTOR",
+            /*LOOP_GAIN = 43,*/         "LOOP_GAIN",
+            /*BEMF_GAIN = 44,*/         "BEMF_GAIN",
+            /*STARTUP_BOOST = 45,*/     "STARTUP_BOOST",
+            /*AC_COUPLE = 46,*/         "AC_COUPLE",
+            /*DRIVE_TIME = 47,*/        "DRIVE_TIME",
+            /*BIDIR_INPUT = 48,*/       "BIDIR_INPUT",
+            /*BRAKE_STABILIZER = 49,*/  "BRAKE_STABILIZER",
+            /*SAMPLE_TIME = 50,*/       "SAMPLE_TIME",
+            /*BLANKING_TIME0 = 51,*/    "BLANKING_TIME0",
+            /*IDISS_TIME0 = 52,*/       "IDISS_TIME0",
+            /*NG_THRESH = 53,*/         "NG_THRESH",
+            /*ERM_OPEN_LOOP = 54,*/     "ERM_OPEN_LOOP",
+            /*SUPPLY_COMP_DIS = 55,*/   "SUPPLY_COMP_DIS",
+            /*DATA_FORMAT_RTP = 56,*/   "DATA_FORMAT_RTP",
+            /*LRA_DRIVE_MODE = 57,*/    "LRA_DRIVE_MODE",
+            /*N_PWM_ANALOG = 58,*/      "N_PWM_ANALOG",
+            /*LRA_OPEN_LOOP = 59,*/     "LRA_OPEN_LOOP",
+            /*ZC_DET_TIME = 60,*/       "ZC_DET_TIME",
+            /*AUTO_CAL_TIME = 61,*/     "AUTO_CAL_TIME",
+            /*OTP_STATUS = 62,*/        "OTP_STATUS",
+            /*OTP_PROGRAM = 63,*/       "OTP_PROGRAM",
+            /*AUTO_OL_CNT = 64,*/       "AUTO_OL_CNT",
+            /*LRA_AUTO_OPEN_LOOP = 65,*/"LRA_AUTO_OPEN_LOOP",
+            /*PLAYBACK_INTERVAL = 66,*/ "PLAYBACK_INTERVAL",
+            /*BLANKING_TIME1 = 67,*/    "BLANKING_TIME1",
+            /*IDISS_TIME1 = 68,*/       "IDISS_TIME1",
+            /*OL_LRA_PERIOD = 69,*/     "OL_LRA_PERIOD",
+            /*VBAT = 70,*/              "VBAT",
+            /*LRA_PERIOD = 71,*/        "LRA_PERIOD",
         };
 
         //////////////
@@ -660,30 +774,13 @@ namespace LRA_DRV2605L_TCA
             
         inline __attribute__((always_inline)) int get_channel(){return _channel;}
 
-
-        protected:
-        ////////////////
-        /*Const region*/
-        ////////////////
-
-        //////////////
-        /*Var region*/
-        //////////////
-        Units _unit;
-        Bias _bias;
-        static inline uint8_t controlReg;
-
-        ///////////////
-        /*Func region*/
-        ///////////////
-
         //TCA operation//
 
         /**
          * @brief select multi channel before communication
          * 
          */
-        uint8_t TCA_selectMultiChannel(uint8_t ch);
+        void TCA_selectMultiChannel(uint8_t controlReg);
 
 
         /**
@@ -691,31 +788,69 @@ namespace LRA_DRV2605L_TCA
          * 
          * @param ch from 0 to 7
          */
-        uint8_t TCA_selectSingleChannel(uint8_t ch);
-
-        /**
-         * @brief 
-         * 
-         * @param val 
-         */
-        void setTCAControlReg(uint8_t val);
+        void TCA_selectSingleChannel(uint8_t ch);
 
         /**
          * @brief 
          * 
          * @return uint8_t 
          */
-        uint8_t getTCAControlReg();
+        static inline __attribute__((always_inline)) uint8_t getTCAControlReg(){return _controlReg;}
+
+        //i2c operation
+        /**
+         * @brief use this to write i2c device if you sure the TCA channel is set, or use another overload instead
+         * 
+         * @param regAddr 
+         * @param content 
+         * @param len 
+         * @return ssize_t 
+         */
+        ssize_t multiRegWrite(uint8_t regAddr, const void* content, size_t len);
+
+        /**
+         * @brief same function as another overload, but change controlReg of TCA first
+         * 
+         * @param regAddr 
+         * @param content 
+         * @param len 
+         * @param controlReg 
+         * @return ssize_t 
+         */
+        ssize_t multiRegWrite(uint8_t regAddr, const void* content, size_t len, uint8_t controlReg);
+
+        /**
+         * @brief use this to read i2c device if you sure the TCA channel is set, or use another overload instead
+         * 
+         * @param regAddr 
+         * @param buf 
+         * @param len 
+         * @return ssize_t 
+         */
+        ssize_t multiRegRead(uint8_t regAddr, void* buf, size_t len);
+
+        /**
+         * @brief same function as another overload, but change controlReg of TCA first
+         * 
+         * @param regAddr 
+         * @param buf 
+         * @param len 
+         * @param controlReg 
+         * @return ssize_t 
+         */
+        ssize_t multiRegRead(uint8_t regAddr, void* buf, size_t len, uint8_t controlReg);
 
         //bit operation//
         /**
-         * @brief set bit pair (single regIndex) to specific value 
+         * @brief set bit pair (single regIndex) to specific value, need to check TCA by yourself
          * 
          * @param regIndex see DRV2605L_TCA::regIndex
          * @param val see DRV2605L_TCA::Val
          */
         void setBitPair(int regIndex, uint8_t val);
 
+        void setBitPair(int regIndex, uint8_t val, uint8_t controlReg);
+        
         /**
          * @brief get bit pair (single regIndex) and return 
          * 
@@ -723,6 +858,8 @@ namespace LRA_DRV2605L_TCA
          * @return uint8_t , bit pair value
          */
         uint8_t getBitPair(int regIndex);
+
+        uint8_t getBitPair(int regIndex, uint8_t controlReg);
 
         /**
          * @brief inline version of #define GETMASK(L,sb) (((1 << L) - 1) << sb)
@@ -733,11 +870,69 @@ namespace LRA_DRV2605L_TCA
          * @param startbit 
          * @return uint8_t , bitmask
          */
-        static inline uint8_t getmask(uint8_t length, uint8_t startbit)
+        static inline __attribute__((always_inline)) uint8_t getmask(uint8_t length, uint8_t startbit)
         {
-
+            return (((1 << length) - 1) << startbit);
         }
 
+        //DRV functions
+        /**
+         * @brief reset this drv device by sending 
+         * 
+         */
+        void reset();
+
+        void setRTP(uint8_t val);
+
+        void setGo(bool flag);
+
+        /**
+         * @brief Get the Operation Freq from LRA Resonance Period -- 0x22
+         * 
+         * @return double 
+         */
+        double getOperationFreq();
+
+        void getStatusInfo();
+
+        double getBEMFgain();
+
+        double getPlayBackInterval();
+
+        double getLRASampleTime();
+
+        double getDriveTime();
+
+        double getAVorRMSVoltage();
+
+        double getOverDriveClampVoltage();
+
+        double getBlankingTime();
+
+        double getIdissTime();
+
+        void printAllRegIndex();
+
+        void switchInfo(int index, uint8_t val);
+
+        // LRA project setting
+        void set6S();
+
+        protected:
+        ////////////////
+        /*Const region*/
+        ////////////////
+
+        //////////////
+        /*Var region*/
+        //////////////
+        Units unit;
+        Bias bias;
+
+
+        ///////////////
+        /*Func region*/
+        ///////////////
 
         private:
         ////////////////
@@ -749,6 +944,12 @@ namespace LRA_DRV2605L_TCA
         //////////////
         int _channel = -1;
         int _EN = -1;
+        static int _drvNum;
+        static int _bus;   
+        static uint8_t _controlReg;
+        uint8_t _thisControlReg = 0;
+        static I2CDevice i2c_TCA;
+        I2CDevice i2c_DRV;
         
         ///////////////
         /*Func region*/
