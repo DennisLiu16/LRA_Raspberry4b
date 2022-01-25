@@ -38,4 +38,5 @@ int main()
     ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
     Xdrv.set6S();
     Xdrv.printAllRegIndex();
+    print("{}\n",adxl355.dq_fAccUnitData.size());
 }

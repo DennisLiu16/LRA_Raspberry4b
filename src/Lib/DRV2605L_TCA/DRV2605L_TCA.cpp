@@ -265,7 +265,7 @@ double
 DRV::getOperationFreq()
 {
     uint8_t val = getBitPair(regIndex::LRA_PERIOD, _thisControlReg);
-    return  1 / ((double)val * unit.LRA_PERIOD_us);
+    return  1 / ((double)val * unit.LRA_PERIOD_us) * 1e6;
 }
 
 void 
@@ -524,10 +524,13 @@ DRV::getIdissTime()
 
 void 
 DRV::printAllRegIndex()
-{
+{   string s = format("|{:^20} | {:^4} | {:^5} : {}","regIndex name","dec","hex","description|");
+    string line = format("{0:-^{1}}","",s.size());
+    print("{0:^}\n{1}\n{0:^}\n",line,s);
     for(int index = 0; index < NUM_REG; ++index)
     {
         uint8_t val = getBitPair(index);
+        
         switchInfo(index, val);
     }
 }
@@ -771,7 +774,7 @@ DRV::switchInfo(int index, uint8_t val)
             str = (val) ? "On" : "Off";
             break;
         case SAMPLE_TIME:
-            str = format("LRA auto-resonance sampling time = {:.1f}", getLRASampleTime());
+            str = format("LRA auto-resonance sampling time = {:.1f} (us)", getLRASampleTime());
             break;
         case BLANKING_TIME0:
             str = format("Blanking time = {:.1f} (us)", getBlankingTime());
@@ -880,12 +883,15 @@ DRV::switchInfo(int index, uint8_t val)
         case VBAT:
             str = format("V(BAT) Voltage(VDD) = {:.3f} (V)", val*unit.VBAT_V/255);
             break;
+        case LRA_PERIOD:
+            str = format("LRA Period = {:.3f} (us) = {:.3f}(Hz)", val*unit.LRA_PERIOD_us, 1/(unit.LRA_PERIOD_us*val)*1e6);
+            break;
         default:
             str = "";
             break;
     }
-    print("{:<20} | {:<4} | {:<5x} : {}\n",regName[index], val, val, str);
-    print("\n");
+    print("|{:^20} | {:^4} | {:^#5X} : {}\n",regName[index], val, val, str);
+    print("|{:-^20} | {:-^4} | {:-^5}   {}\n","", "", "", "");
 }
 
 // LRA project setting 
