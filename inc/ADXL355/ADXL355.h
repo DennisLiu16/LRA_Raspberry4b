@@ -675,20 +675,6 @@ namespace LRA_ADXL355
         uint8_t readTemp();
 
         /**
-         * @brief read the measure range of adxl355 -> 2g/4g/8g
-         * 
-         * @return uint8_t 
-         */
-        uint8_t readMeasureRange();
-
-        /**
-         * @brief set the measure range of adxl355 -> 2g/4g/8g
-         * 
-         * @param val 
-         */
-        void setMeasureRange(uint8_t val);
-
-        /**
          * @brief read len  bytes or registers that start from regaddr  
          * 
          * @param regaddr 
