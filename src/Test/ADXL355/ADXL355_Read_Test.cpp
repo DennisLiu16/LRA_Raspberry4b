@@ -27,7 +27,7 @@ int main()
     ADXL355::fOffset foffset =  adxl355.readOffset();
     print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
 
-    adxl355.readMeasureRange();
+    adxl355.getAccRange();
 
     while(1)
     {

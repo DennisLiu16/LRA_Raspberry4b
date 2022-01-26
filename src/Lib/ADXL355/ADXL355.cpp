@@ -139,53 +139,6 @@ void ADXL355::setMeasureMode()
     StartMeasurement(); //start immediately
 }
 
-uint8_t ADXL355::readMeasureRange()
-{
-    StopMeasurement();
-    uint8_t val = getSingleBitPair(regIndex::range);
-    switch(val)
-    {
-        case Value::Range_2g:
-            print("current measure range is ± 2g\n");
-            break;
-        case Value::Range_4g:
-            print("current measure range is ± 4g\n");
-            break;
-        case Value::Range_8g:
-            print("current measure range is ± 8g\n");
-            break;
-        default:
-            print("get measure range failed, plz check \n");
-    }
-    StartMeasurement();
-    return val;
-}
-
-void ADXL355::setMeasureRange(uint8_t val)
-{
-    StopMeasurement();
-
-    /*val should be 0b10, 0b01 or 0b11*/
-    switch(val)
-    {
-        case Value::Range_2g:
-            print("set measure range to ± 2g\n");
-            break;
-        case Value::Range_4g:
-            print("set measure range to ± 4g\n");
-            break;
-        case Value::Range_8g:
-            print("set measure range to ± 8g\n");
-            break;
-        default:
-            print("range out of range, set to ± 2g\n");
-            val = Value::Range_2g;
-    }
-
-    setSingleBitPair(regIndex::range, val);
-    StartMeasurement();
-}
-
 uint8_t ADXL355::getPartID()
 {
     StopMeasurement();
@@ -328,13 +281,14 @@ void ADXL355::setOffset(ADXL355::fOffset foffset)
 
 void ADXL355::setAccRange(int range)
 {
+    StopMeasurement();
     switch(range)
     {
-        case Range_2g:
+        case Value::Range_2g:
             setSingleBitPair(regIndex::range, Range_2g);
             AccMeasureRange = dRange_2g;
             break;
-        case Range_8g:
+        case Value::Range_8g:
             setSingleBitPair(regIndex::range, Range_8g);
             AccMeasureRange = dRange_8g;
             break;
@@ -343,21 +297,23 @@ void ADXL355::setAccRange(int range)
             AccMeasureRange = dRange_4g;
             break;
     }
+    StartMeasurement();
 }
 
 double ADXL355::getAccRange()
 {
+    StopMeasurement();
     uint8_t val = getSingleBitPair(regIndex::range);
     double dRange;
     switch(val)
     {
-        case Range_2g:
+        case Value::Range_2g:
             dRange = dRange_2g;
             break;
-        case Range_4g:
+        case Value::Range_4g:
             dRange = dRange_4g;
             break;
-        case Range_8g:
+        case Value::Range_8g:
             dRange = dRange_8g;
             break;
         default:
@@ -367,6 +323,7 @@ double ADXL355::getAccRange()
     };
     print("Measurement range is ±{:.3f}\n",dRange/2);
     AccMeasureRange = dRange;
+    StartMeasurement();
     return AccMeasureRange;
 }
 
