@@ -9,7 +9,6 @@
 #include <cmath>
 #include <deque>
 #include <thread>
-#include <chrono>
 #include <mutex>
 extern "C" {
 #include <wiringPi.h>
@@ -51,7 +50,7 @@ namespace LRA_ADXL355
         static ADXL355* InstanceArray[10];  // you need to mod if you need more than 10 adxl355 instances
 
         int SPI_fd = 0;
-        double AccMeasureRange = 4.196; //+- 2.048g in default --> change to getRange later
+        double AccMeasureRange = dRange_4g; //+- 4.196g in default --> change to getRange later
         uint8_t buf[4096] = {0};
         timespec adxl355_birth_time;
         volatile bool _fifoINTRdyFlag = 0;
@@ -123,6 +122,10 @@ namespace LRA_ADXL355
         }fOffset;
 
         deque<fAccUnit> dq_fAccUnitData;
+
+        const double dRange_2g = 2.048*2;
+        const double dRange_4g = 4.096*2;
+        const double dRange_8g = 8.192*2;
 
         enum RW{
             WRITE = 0,
@@ -531,6 +534,10 @@ namespace LRA_ADXL355
         void setOffset();
 
         void setOffset(fOffset foffset);
+
+        void setAccRange(int range);
+
+        double getAccRange();
 
         static void isr_default();
 

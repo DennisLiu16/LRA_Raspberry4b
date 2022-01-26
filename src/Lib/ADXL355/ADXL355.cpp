@@ -50,6 +50,12 @@ ADXL355::ADXL355(int channel,
     clock_getres(CLOCK_REALTIME, &tt);
     print("clock resolution: {} ns\n", tt.tv_nsec);
 
+    /*Set range*/
+    setAccRange(Range_4g);
+
+    /*Check range set*/
+    getAccRange();
+
     setMeasureMode();
 
     if(_updateMode == INT_update_mode)
@@ -318,6 +324,50 @@ void ADXL355::setOffset(ADXL355::fOffset foffset)
     setMultiByte(getAddr(offset_x_h),LenOffsetSet,tmp_buf);
 
     StartMeasurement();
+}
+
+void ADXL355::setAccRange(int range)
+{
+    switch(range)
+    {
+        case Range_2g:
+            setSingleBitPair(regIndex::range, Range_2g);
+            AccMeasureRange = dRange_2g;
+            break;
+        case Range_8g:
+            setSingleBitPair(regIndex::range, Range_8g);
+            AccMeasureRange = dRange_8g;
+            break;
+        default:
+            setSingleBitPair(regIndex::range, Range_4g);
+            AccMeasureRange = dRange_4g;
+            break;
+    }
+}
+
+double ADXL355::getAccRange()
+{
+    uint8_t val = getSingleBitPair(regIndex::range);
+    double dRange;
+    switch(val)
+    {
+        case Range_2g:
+            dRange = dRange_2g;
+            break;
+        case Range_4g:
+            dRange = dRange_4g;
+            break;
+        case Range_8g:
+            dRange = dRange_8g;
+            break;
+        default:
+            print("\n\n\nFatal Error -- Range out of range , plz check \n\n\n");
+            dRange = dRange_4g;
+            break;
+    };
+    print("Measurement range is ±{:.3f}\n",dRange/2);
+    AccMeasureRange = dRange;
+    return AccMeasureRange;
 }
 
 void ADXL355::StartMeasurement()
