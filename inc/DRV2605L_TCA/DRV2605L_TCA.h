@@ -884,7 +884,14 @@ namespace LRA_DRV2605L_TCA
 
         void setRTP(uint8_t val);
 
+        /**
+         * @brief Set the Go , mainly for waveform display seq
+         * 
+         * @param flag 
+         */
         void setGo(bool flag);
+
+        void setStandBy(bool flag);
 
         /**
          * @brief Get the Operation Freq from LRA Resonance Period -- 0x22

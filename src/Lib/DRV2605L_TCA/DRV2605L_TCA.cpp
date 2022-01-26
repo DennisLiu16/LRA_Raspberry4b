@@ -261,6 +261,17 @@ DRV::setGo(bool flag)
     setBitPair(regIndex::GO, GO_stop, _thisControlReg);
 }
 
+void 
+DRV::setStandBy(bool flag)
+{
+    if(flag == STANDBY_ready)
+    {
+        setBitPair(STANDBY,STANDBY_ready);
+        return;
+    }
+     setBitPair(STANDBY,STANDBY_standby);
+}
+
 double 
 DRV::getOperationFreq()
 {
@@ -903,6 +914,9 @@ DRV::set6S()
 
     /*Mode*/
     setBitPair(MODE, MODE_realtime_playback);
+
+    /*RTP set to 0*/
+    setBitPair(RTP_INPUT, 0);
 
     /*Library Selection*/
     setBitPair(LIBRARY_SEL, LIBRARY_SEL_lra);
