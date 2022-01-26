@@ -544,6 +544,7 @@ DRV::printAllRegIndex()
         
         switchInfo(index, val);
     }
+    print("\n\n");
 }
 
 void

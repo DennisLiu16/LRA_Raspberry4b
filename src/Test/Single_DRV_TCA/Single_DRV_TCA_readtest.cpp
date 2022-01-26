@@ -52,8 +52,8 @@ int main()
     ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
 
     // write to fd var
-    fdAcc = fopen("Acc.txt","wb");
-    fdRTP = fopen("RTP.txt","wb");
+    fdAcc = fopen("/home/ubuntu/LRA/Code/data/log/Acc.txt","wb");
+    fdRTP = fopen("/home/ubuntu/LRA/Code/data/log/RTP.txt","wb");
 
     sleep(1);
 
