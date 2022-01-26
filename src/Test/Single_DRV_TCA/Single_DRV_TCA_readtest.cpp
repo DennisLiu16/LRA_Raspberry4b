@@ -1,8 +1,6 @@
 #include<DRV2605L_TCA/DRV2605L_TCA.h>
 #include<ADXL355/ADXL355.h>
 
-#include<unistd.h>  // for write
-
 /*namespace alias*/
 using namespace LRA_ADXL355;
 using namespace LRA_DRV2605L_TCA;
@@ -55,7 +53,7 @@ int main()
     fdAcc = fopen("/home/ubuntu/LRA/Code/data/log/Acc.txt","wb");
     fdRTP = fopen("/home/ubuntu/LRA/Code/data/log/RTP.txt","wb");
 
-    sleep(1);
+    sleep(1);   // prevent no data in deque
 
     uint8_t val = 0;
 
