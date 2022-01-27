@@ -1,6 +1,8 @@
 #include<DRV2605L_TCA/DRV2605L_TCA.h>
 #include<ADXL355/ADXL355.h>
 
+#include<sys/select.h>   // using select function
+
 /*namespace alias*/
 using namespace LRA_ADXL355;
 using namespace LRA_DRV2605L_TCA;
@@ -11,6 +13,8 @@ DRV2605L_TCA Xdrv;
 FILE* fdAcc;
 FILE* fdRTP;
 
+static bool _running = true;
+
 /*irq test*/
 void irq_test_0()
 {
@@ -18,30 +22,17 @@ void irq_test_0()
         ADXL355::InstanceArray[0]->_fifoINTRdyFlag = 1;
 }
 
-/*Crtl+C related*/
-void signal_handler(int signum)
+/*quit judge*/
+void quit_check()
 {
-    /*can't use in vs code debug mode?*/
-    if(signum == SIGINT)
-    {
-        print("\nCtrl+C triggered, leaving process\n");
-        Xdrv.setStandBy(DRV::STANDBY_standby);
-        string s = Xdrv.getBitPair(DRV::STANDBY) ? "Standby" : "Ready";
-        print("{}",s);
-        sleep(1);
-        fclose(fdAcc);
-        fclose(fdRTP);
-        exit(1);
-    }
+    // read stdin 
+
+    // check "quit\n"
+    
 }
 
 int main()
 {
-    /*register signal*/
-    if(signal(SIGINT,signal_handler)==SIG_ERR){
-        print("Failed to get signal\n");
-    }
-
     wiringPiSetup();
     DRV2605L_TCA Xdrv(25, 0);
     Xdrv.setStandBy(DRV::STANDBY_ready);   
@@ -53,12 +44,22 @@ int main()
     fdAcc = fopen("/home/ubuntu/LRA/Code/data/log/Acc.txt","wb");
     fdRTP = fopen("/home/ubuntu/LRA/Code/data/log/RTP.txt","wb");
 
+    // select setting
+    fd_set rfd;
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    const int std_in_fd = 0;
+
     sleep(1);   // prevent no data in deque
 
     uint8_t val = 0;
 
-    while(true)
+    while(_running)
     {
+        timespec t1,t2;
+        clock_gettime(CLOCK_REALTIME, &t1);
+        clock_gettime(CLOCK_REALTIME, &t2);
         if( (adxl355.dq_fAccUnitData.size() > 40)/*timer flag*/)
         {
             // get size
@@ -91,8 +92,41 @@ int main()
             // https://blog.xuite.net/coke750101/coketech/20842552
             fflush(fdAcc);
             fflush(fdRTP);
-            // write to file or db
+
+            /*check stdin*/
+            FD_ZERO(&rfd);
+            FD_SET(0, &rfd);    // stdin is fd 0
+            int ret = select(std_in_fd +1, &rfd, NULL, NULL, &tv);
+            if(ret < 0)
+            {
+                perror("select wrong");
+                exit(EXIT_FAILURE);
+            }
+            else if(ret)
+            {
+                string userInput;
+                cin >> userInput;
+                if(userInput == "q" || userInput == "quit")
+                {
+                    timespec now;
+                    clock_gettime(CLOCK_REALTIME, &now);
+                    print("\n\nLeave time : {:.3f} (s)\n\n", time_diff_ms(&adxl355.adxl355_birth_time, &now)/1000.0);
+                    print("Leaving Main Thread\n");
+                    _running = 0;
+                }
+                else
+                {
+                    cout << "Input : \" " <<userInput << " \" is invalid" << endl;
+                }
+            }
+
         }
+        clock_gettime(CLOCK_REALTIME, &t2);
+        double time_diff = time_diff_us(&t1,&t2);
+        if(time_diff > 4000)
+            print("this loop cost (us): {:.3f} \n", time_diff);
     }
+    //close
     Xdrv.setStandBy(DRV::STANDBY_standby);
+    adxl355.StopMeasurement();
 }
