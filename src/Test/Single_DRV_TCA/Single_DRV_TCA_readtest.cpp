@@ -55,19 +55,19 @@ int main()
     sleep(1);   // prevent no data in deque
 
     uint8_t val = 0;
-
+    timespec t1,t2;
+    
     while(_running)
     {
-        timespec t1,t2;
-        clock_gettime(CLOCK_REALTIME, &t1);
+        
         if( (adxl355.dq_fAccUnitData.size() > 40)/*timer flag*/)
         {
-
-            clock_gettime(CLOCK_REALTIME, &t1);
+            
             // get size
             size_t accNum = adxl355.dq_fAccUnitData.size();
 
             ADXL355::fAccUnit tmp;
+            
             // get acc info
             for(size_t index = 0; index < accNum; ++index)
             {
@@ -80,8 +80,9 @@ int main()
             
             // set RTP
             val++;
-
+            clock_gettime(CLOCK_REALTIME, &t1);
             Xdrv.setRTP(val);
+            clock_gettime(CLOCK_REALTIME, &t2);
 
             timespec t_tmp; 
             clock_gettime(CLOCK_REALTIME, &t_tmp);
@@ -121,10 +122,10 @@ int main()
                     print("Input \" {}\" is invalid \n\n", userInput);
                 }
             }
-            clock_gettime(CLOCK_REALTIME, &t2);
+            
             double time_diff = time_diff_us(&t1,&t2);
-            if(time_diff > 1000)
-                print("this loop cost (us): {:.3f} \n", time_diff);
+            if(time_diff > 100)
+                print("cost (us): {:.3f} \n", time_diff);
         }
         
     }
