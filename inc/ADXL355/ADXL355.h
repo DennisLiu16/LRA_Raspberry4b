@@ -531,7 +531,11 @@ namespace LRA_ADXL355
          */
         fOffset readOffset();
 
-        void setOffset();
+        /**
+         * @brief auto set offset, default 10000 samples - tune this at AVG_data_size
+         * 
+         */
+        void setOffset(unsigned int samples);
 
         void setOffset(fOffset foffset);
 

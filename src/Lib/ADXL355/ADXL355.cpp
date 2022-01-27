@@ -73,8 +73,8 @@ ADXL355::ADXL355(int channel,
 
     }
 
-    // get offset and tune 
-    setOffset();
+    // auto set off set val, default 10000 samples 
+    setOffset(Default::AVG_data_size);
 
     //Thread para
     if(_updateThread)
@@ -127,12 +127,14 @@ bool ADXL355::getStandByState()
     return (u8read | GETMASK(getLength(standby),getStartBit(standby)));
 }
 
+// set the device into standby mode
 void ADXL355::setStandByMode()
 {
     StopMeasurement();
     setSingleBitPair(regIndex::standby,1);
 }
 
+// set the device into measure mode
 void ADXL355::setMeasureMode()
 {
     setSingleBitPair(regIndex::standby,0);
@@ -179,7 +181,7 @@ ADXL355::fOffset ADXL355::readOffset()
     return foffset;
 }
 
-void ADXL355::setOffset()
+void ADXL355::setOffset(unsigned int samples)
 {
     StopMeasurement();
     
@@ -189,9 +191,12 @@ void ADXL355::setOffset()
     timespec diff;
     clock_gettime(CLOCK_REALTIME,&front);
     clock_gettime(CLOCK_REALTIME,&end);
-    // get avg 
+    
+    print("\nStart auto offset setting...\n");
+    print("Samples : {} \n\n",samples);
 
-    while(dq_fAccUnitData.size() < AVG_data_size)
+    // get avg 
+    while(dq_fAccUnitData.size() < samples)
     {
         if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
         {
@@ -321,7 +326,7 @@ double ADXL355::getAccRange()
             dRange = dRange_4g;
             break;
     };
-    print("Measurement range is ±{:.3f}\n",dRange/2);
+    print("Measurement range is ± {:.3f} (g)\n",dRange/2);
     AccMeasureRange = dRange;
     StartMeasurement();
     return AccMeasureRange;
