@@ -59,9 +59,10 @@ int main()
     {
         timespec t1,t2;
         clock_gettime(CLOCK_REALTIME, &t1);
-        clock_gettime(CLOCK_REALTIME, &t2);
         if( (adxl355.dq_fAccUnitData.size() > 40)/*timer flag*/)
         {
+
+            clock_gettime(CLOCK_REALTIME, &t1);
             // get size
             size_t accNum = adxl355.dq_fAccUnitData.size();
 
@@ -75,7 +76,7 @@ int main()
                 fprintf(fdAcc, "%.3f,%.3f,%.3f,%.3f\n", tmp.time_ms, tmp.fX, tmp.fY, tmp.fZ);
             }
             // calculate RTP
-
+            
             // set RTP
             val++;
 
@@ -84,15 +85,15 @@ int main()
             timespec t_tmp; 
             clock_gettime(CLOCK_REALTIME, &t_tmp);
             double diff = time_diff_ms(&adxl355.adxl355_birth_time,&t_tmp);
-
+            
             fprintf(fdRTP, "%.3f, %d, %.3f\n", diff, val, Xdrv.getOperationFreq());
             //print("now {:^.3f} (ms) | acc_now : {:^.3f} (ms)\n", diff, tmp.time_ms);
-
+            
             // make sure write to file directly
             // https://blog.xuite.net/coke750101/coketech/20842552
             fflush(fdAcc);
             fflush(fdRTP);
-
+            
             /*check stdin*/
             FD_ZERO(&rfd);
             FD_SET(0, &rfd);    // stdin is fd 0
@@ -116,15 +117,15 @@ int main()
                 }
                 else
                 {
-                    cout << "Input : \" " <<userInput << " \" is invalid" << endl;
+                    print("Input \" {}\" is invalid \n\n", userInput);
                 }
             }
-
+            clock_gettime(CLOCK_REALTIME, &t2);
+            double time_diff = time_diff_us(&t1,&t2);
+            if(time_diff > 1000)
+                print("this loop cost (us): {:.3f} \n", time_diff);
         }
-        clock_gettime(CLOCK_REALTIME, &t2);
-        double time_diff = time_diff_us(&t1,&t2);
-        if(time_diff > 4000)
-            print("this loop cost (us): {:.3f} \n", time_diff);
+        
     }
     //close
     Xdrv.setStandBy(DRV::STANDBY_standby);
