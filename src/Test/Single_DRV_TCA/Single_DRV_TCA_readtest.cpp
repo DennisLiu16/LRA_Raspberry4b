@@ -16,7 +16,7 @@ FILE* fdRTP;
 static bool _running = true;
 bool _loop_timer = false;
 
-/*irq test*/
+/*irq test 0*/
 void irq_test_0()
 {
     if(ADXL355::InstanceArray[0] != nullptr)
@@ -29,8 +29,15 @@ void timer_flag()
     _loop_timer = true;
 }
 
-    // check "quit\n"
-    
+/*quit judge*/
+bool quit_check()
+{
+    string userInput;
+    cin >> userInput;
+    if(userInput == "q" || userInput == "quit")
+        return true;
+    print("Input \" {}\" is invalid \n\n", userInput);
+    return false;
 }
 
 int main()
@@ -114,11 +121,9 @@ int main()
                 perror("select wrong");
                 exit(EXIT_FAILURE);
             }
-            else if(ret)
+            if(ret)
             {
-                string userInput;
-                cin >> userInput;
-                if(userInput == "q" || userInput == "quit")
+                if(quit_check())
                 {
                     timespec now;
                     clock_gettime(CLOCK_REALTIME, &now);
