@@ -16,6 +16,9 @@
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <sys/time.h>
+// thread
+#include <thread>
+#include <atomic>
 
 #include <ErrorCode/LRA_ErrorCode.h>
 
@@ -51,6 +54,20 @@ namespace LRA_PI_Util{
         protected:
 
         private:
+
+    };
+
+    class Timer {
+        //https://github.com/99x/timercpp
+        std::atomic<bool> active{true};
+        
+        public:
+            template<typename func>
+            void setTimeout(func function, unsigned int udelay);
+
+            template<typename func>
+            void setInterval(func function, unsigned int uinterval);
+            void stop();
 
     };
 

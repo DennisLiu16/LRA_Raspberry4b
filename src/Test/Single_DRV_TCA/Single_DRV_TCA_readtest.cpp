@@ -14,6 +14,7 @@ FILE* fdAcc;
 FILE* fdRTP;
 
 static bool _running = true;
+bool _loop_timer = false;
 
 /*irq test*/
 void irq_test_0()
@@ -22,10 +23,11 @@ void irq_test_0()
         ADXL355::InstanceArray[0]->_fifoINTRdyFlag = 1;
 }
 
-/*quit judge*/
-void quit_check()
+/**/
+void timer_flag()
 {
-    // read stdin 
+    _loop_timer = true;
+}
 
     // check "quit\n"
     
@@ -55,14 +57,22 @@ int main()
     sleep(1);   // prevent no data in deque
 
     uint8_t val = 0;
-    timespec t1,t2;
+    timespec t1,t2,t_loop,last_t_loop;
+
+    // create a Timer 
+    Timer myTimer = Timer();
+
+    myTimer.setInterval(timer_flag,9920u);
     
     while(_running)
     {
         
-        if( (adxl355.dq_fAccUnitData.size() > 40)/*timer flag*/)
+        if( (_loop_timer)/*timer flag*/)
         {
-            
+            last_t_loop = t_loop;
+            clock_gettime(CLOCK_REALTIME, &t_loop);
+            clock_gettime(CLOCK_REALTIME, &t1);
+            print("loop time is {:.3f}\n", time_diff_ms(&last_t_loop, &t_loop));
             // get size
             size_t accNum = adxl355.dq_fAccUnitData.size();
 
@@ -80,10 +90,9 @@ int main()
             
             // set RTP
             val++;
-            clock_gettime(CLOCK_REALTIME, &t1);
+            
             Xdrv.setRTP(val);
-            clock_gettime(CLOCK_REALTIME, &t2);
-
+            
             timespec t_tmp; 
             clock_gettime(CLOCK_REALTIME, &t_tmp);
             double diff = time_diff_ms(&adxl355.adxl355_birth_time,&t_tmp);
@@ -117,15 +126,15 @@ int main()
                     print("Leaving Main Thread\n");
                     _running = 0;
                 }
-                else
-                {
-                    print("Input \" {}\" is invalid \n\n", userInput);
-                }
             }
-            
+
+            clock_gettime(CLOCK_REALTIME, &t2);
             double time_diff = time_diff_us(&t1,&t2);
             if(time_diff > 100)
-                print("cost (us): {:.3f} \n", time_diff);
+                //print("cost (us): {:.3f} \n", time_diff);
+
+            // flag reset
+            _loop_timer = false;
         }
         
     }
