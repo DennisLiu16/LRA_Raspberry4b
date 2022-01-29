@@ -105,7 +105,6 @@ int main()
             double diff = time_diff_ms(&adxl355.adxl355_birth_time,&t_tmp);
             
             fprintf(fdRTP, "%.3f, %d, %.3f\n", diff, val, Xdrv.getOperationFreq());
-            //print("now {:^.3f} (ms) | acc_now : {:^.3f} (ms)\n", diff, tmp.time_ms);
             
             // make sure write to file directly
             // https://blog.xuite.net/coke750101/coketech/20842552
