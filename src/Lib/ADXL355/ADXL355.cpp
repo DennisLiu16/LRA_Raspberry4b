@@ -4,6 +4,7 @@ using namespace LRA_ADXL355;
 /* init static variable */
 ADXL355* ADXL355::InstanceArray[ADXL355::MAX_INSTANCE_NUM] = {nullptr};
 
+// TODO mod constructor
 ADXL355::ADXL355(int channel,
                  int speed,
                  int mode,
@@ -12,8 +13,7 @@ ADXL355::ADXL355(int channel,
                  void (*isr_handler)(void)
                  )
     {
-
-    /* put this pointer into InstanceArray*/
+     /* put this pointer into InstanceArray*/
     int i = 0;
     while( i < MAX_INSTANCE_NUM)
     {
@@ -22,6 +22,7 @@ ADXL355::ADXL355(int channel,
             _thisInstanceIndex = i;
             break;
         }
+        ++i;
     }
     if(_thisInstanceIndex < 0)
     {
@@ -37,12 +38,15 @@ ADXL355::ADXL355(int channel,
         print("Instance {} open SPI successed\n",_thisInstanceIndex + 1);
 
     _channel = channel;
+    _speed = speed;
+    _mode = mode;
     _updateMode = updateMode;
     _updateThread = updateThread;
 
-    /*Init setting*/
+    /* birth time */
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
+    /* reset sys */
     resetThisAdxl355();
     print("partid is {}\n",getPartID());
 
@@ -68,12 +72,10 @@ ADXL355::ADXL355(int channel,
     
         wiringPiISR(INT_PIN1,INT_EDGE_RISING,isr_handler);
 
-        // set adxl355 register to enable interrupt
-        // use DRDY pin - active high
-
+        // DRDY_OFF should be zero to enable DRDY pin 
     }
 
-    // auto set off set val, default 10000 samples 
+    // auto set off set val, default 10000 samples
     setOffset(Default::AVG_data_size);
 
     //Thread para
@@ -82,80 +84,31 @@ ADXL355::ADXL355(int channel,
         _exitThread = 0;
         std::thread(&ADXL355::_updateInBackground,this).detach();
     }
+    
         
 }
 
 ADXL355::~ADXL355()
 {
-    //pass
     _exitThread = 1;
     InstanceArray[_thisInstanceIndex] = nullptr;
 }
 
-inline uint8_t ADXL355::getAddr(regIndex bIndex)
+void
+ADXL355::setParametersDefault()
 {
-    return static_cast<uint8_t>(addr[bIndex]);
+    _thisInstanceIndex = -1;
+    _channel = Default::spi_channel;
+    _speed = Default::spi_speed;
+    _mode = Default::spi_mode;
+    _updateThread = 0;
+    _exitThread = 1;
+    _doMeasurement = false;
+    _updateMode = Default::polling_update_mode;
 }
 
-inline uint8_t ADXL355::getStartBit(regIndex bIndex)
-{
-    return static_cast<uint8_t>(startbit[bIndex]);
-}
-
-inline uint8_t ADXL355::getLength(regIndex bIndex)
-{
-    return static_cast<uint8_t>(length[bIndex]);
-}
-
-// setting functions 
-void ADXL355::resetThisAdxl355()
-{
-    StopMeasurement();
-    setSingleReg(getAddr(reset),0x52);  //from data sheet
-    StartMeasurement();
-    print("System reset finished \n");
-}
-
-
-bool ADXL355::getStandByState()
-{
-    /*change to readSingleBitPair() later*/
-    StopMeasurement();
-    readSingleByte(getAddr(standby));
-    uint8_t u8read = *readBufPtr;
-    StartMeasurement();
-    return (u8read | GETMASK(getLength(standby),getStartBit(standby)));
-}
-
-// set the device into standby mode
-void ADXL355::setStandByMode()
-{
-    StopMeasurement();
-    setSingleBitPair(regIndex::standby,1);
-}
-
-// set the device into measure mode
-void ADXL355::setMeasureMode()
-{
-    setSingleBitPair(regIndex::standby,0);
-    StartMeasurement(); //start immediately
-}
-
-uint8_t ADXL355::getPartID()
-{
-    StopMeasurement();
-    readSingleByte(getAddr(partid));
-    uint8_t u8read = *readBufPtr;
-    StartMeasurement();
-    return u8read;
-}
-
-ssize_t ADXL355::getAllReg()
-{
-    //readMultiByte(getAddr(devid_ad),0x2f+1);
-}
-
-ADXL355::fOffset ADXL355::readOffset()
+ADXL355::fOffset 
+ADXL355::readOffset()
 {
     StopMeasurement();
     
@@ -181,37 +134,21 @@ ADXL355::fOffset ADXL355::readOffset()
     return foffset;
 }
 
-void ADXL355::setOffset(unsigned int samples)
+void 
+ADXL355::setOffset(unsigned int samples)
 {
     StopMeasurement();
     
     // read for about 1 sec 
-    timespec front;
-    timespec end;
-    timespec diff;
+    timespec front, end, diff;
     clock_gettime(CLOCK_REALTIME,&front);
-    clock_gettime(CLOCK_REALTIME,&end);
     
     print("\nStart auto offset setting...\n");
     print("Samples : {} \n\n",samples);
-
     // get avg 
     while(dq_fAccUnitData.size() < samples)
     {
-        if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
-        {
-            uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
-
-            //ssize_t _len = readFifoDataSetOnce();
-            //PreParseOneAccDataUnit(readBufPtr,_len);    //origin
-
-            ssize_t _len = readAxesDataOnce(tmp_buf);
-            //ssize_t _len = readFifoDataSetOnce(tmp_buf);
-            PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    //readBufPtr here safe?
-            //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
-
-            _fifoINTRdyFlag = 0;
-        }
+        _updateAccData(AccDataMarker::TypeAxes);
     }
 
     clock_gettime(CLOCK_REALTIME,&end);
@@ -219,8 +156,6 @@ void ADXL355::setOffset(unsigned int samples)
     print("Collect {} data take {:6.3f} (ms)\n",AVG_data_size,time_diff_ms(&front,&end));
 
     clock_gettime(CLOCK_REALTIME,&front);
-    clock_gettime(CLOCK_REALTIME,&end);
-
 
     // avg
     fAccUnit faccunit = 
@@ -233,11 +168,11 @@ void ADXL355::setOffset(unsigned int samples)
     while(!dq_fAccUnitData.empty())
         faccunit += dq_pop_front();
 
-    faccunit/=AVG_data_size;    // 
+    faccunit/=AVG_data_size;     
     
     clock_gettime(CLOCK_REALTIME,&end);
 
-    print("Calculate average take {:6.3f} (us)\n",time_diff_us(&front,&end));
+    print("Calculate average take {:6.3f} (us)\n\n",time_diff_us(&front,&end));
     print("fX : {:6.3f}, fY : {:6.3f}, fZ : {:6.3f} \n",faccunit.fX,faccunit.fY,faccunit.fZ);
 
     fOffset foffset;
@@ -251,7 +186,8 @@ void ADXL355::setOffset(unsigned int samples)
     StartMeasurement();
 }
 
-void ADXL355::setOffset(ADXL355::fOffset foffset)
+void 
+ADXL355::setOffset(ADXL355::fOffset foffset)
 {
     StopMeasurement();
 
@@ -284,7 +220,8 @@ void ADXL355::setOffset(ADXL355::fOffset foffset)
     StartMeasurement();
 }
 
-void ADXL355::setAccRange(int range)
+void 
+ADXL355::setAccRange(int range)
 {
     StopMeasurement();
     switch(range)
@@ -305,7 +242,8 @@ void ADXL355::setAccRange(int range)
     StartMeasurement();
 }
 
-double ADXL355::getAccRange()
+double 
+ADXL355::getAccRange()
 {
     StopMeasurement();
     uint8_t val = getSingleBitPair(regIndex::range);
@@ -332,44 +270,16 @@ double ADXL355::getAccRange()
     return AccMeasureRange;
 }
 
-void ADXL355::StartMeasurement()
-{
-    if(_updateThread && !_doMeasurement)
-        _doMeasurement = true;
-}
-
-void ADXL355::StopMeasurement()
-{
-    if(_updateThread && _doMeasurement)
-    {
-        _doMeasurement = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));  // wait for measure thread done one loop
-    }
-}
-
-void ADXL355::isr_default()
+void 
+ADXL355::isr_default()
 {
     // do nothing for default is polling mode
     // if you want to use interrupt mode, build one irq_handler in the main thread 
     // see example 
 }
 
-// thread functions
-void ADXL355::dq_push_back(const fAccUnit _faccunit)
-{
-    std::lock_guard<std::mutex> dq_push_back_lock(deque_mutex);
-    dq_fAccUnitData.push_back(_faccunit);
-}
-
-ADXL355::fAccUnit ADXL355::dq_pop_front()
-{
-    std::lock_guard<std::mutex> dq_pop_front_lock(deque_mutex);
-    fAccUnit _faccunit = dq_fAccUnitData.front();
-    dq_fAccUnitData.pop_front();
-    return _faccunit;
-}
-
-void ADXL355::_updateInBackground()
+void 
+ADXL355::_updateInBackground()
 {
     print("Start ADXL355 update in background\n");
 
@@ -381,140 +291,53 @@ void ADXL355::_updateInBackground()
     while(!_exitThread)
     {
         if(_doMeasurement)
-        {
-            // maybe read out old data here in first run 
-            if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
-            {
-                uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
-
-                ssize_t _len = readAxesDataOnce(tmp_buf);
-                //ssize_t _len = readFifoDataSetOnce(tmp_buf);
-                PreParseOneAccDataUnit(tmp_buf+1,_len,TypeAxes);    
-                //PreParseOneAccDataUnit(tmp_buf+1,_len,TypeFifo); // for type fifo
-
-                _fifoINTRdyFlag = 0;
-            }
-        }
+            _updateAccData(AccDataMarker::TypeAxes);
     }
     print("Leaving update thread\n");
 }
 
-// basic functions
-ssize_t ADXL355::readSingleByte(uint8_t regaddr)
+void 
+ADXL355::_updateAccData(int Type)
 {
-    return readMultiByte(regaddr,1);
-}
-
-ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
-{
-    
-    if(len <= RW::RWByteMax)
+    if( (_updateMode == polling_update_mode) || _fifoINTRdyFlag)
     {
-        uint8_t rcmd = (regaddr << 1) | READ;
-        *buf = rcmd;
+        ssize_t _len;
+        uint8_t tmp_buf[LenDataSet+1];  //include return 0 at first byte -> make data restore to a different buf in this thread 
+        switch(Type)
+        {
+            case AccDataMarker::TypeAxes:
+                _len = readAxesDataOnce(tmp_buf);
+                break;
+            
+            case AccDataMarker::TypeFifo:
+                _len = readFifoDataSetOnce(tmp_buf);
+                break;
+        }
         
-        int ret = wiringPiSPIDataRW(_channel,buf,len+1);
-        if(ret > 0)
-            return ret-1;
-        /*
-        you can't separate write and read owing to SPI SCLK trigger mechanism
-            ssize_t ret = write(SPI_fd,&rcmd,1);
-            if(ret > 0)
-            return read(SPI_fd,buf,len);
-        */
-
-        /*something bad happen*/
-        print("write readMultiByte rcmd failed\n");
-        return 0;
+        ParseOneAccDataUnit(tmp_buf+1,_len,Type);
+        _fifoINTRdyFlag = 0;
     }
-    
-    print("readMiltiByte len over RW::RWByteMax = 4095\n");
-    return 0;
 }
 
-ssize_t ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
+void 
+ADXL355::dq_push_back(const fAccUnit _faccunit)
 {
-    
-    if(len <= RW::RWByteMax)
-    {
-        uint8_t rcmd = (regaddr << 1) | READ;
-        *tmp_buf = rcmd;
-
-        // clean buf before send rcmd to prevent miswrite
-
-        int ret = wiringPiSPIDataRW(_channel,tmp_buf,len+1);
-        if(ret > 0)
-            return ret-1;
-        /*
-        you can't separate write and read owing to SPI SCLK trigger mechanism
-            ssize_t ret = write(SPI_fd,&rcmd,1);
-            if(ret > 0)
-            return read(SPI_fd,buf,len);
-        */
-
-        /*something bad happen*/
-        print("write readMultiByte rcmd failed\n");
-        return 0;
-    }
-    
-    print("readMiltiByte len over RW::RWByteMax = 4095\n");
-    return 0;
+    std::lock_guard<std::mutex> dq_push_back_lock(deque_mutex);
+    dq_fAccUnitData.push_back(_faccunit);
 }
 
-ssize_t ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
+ADXL355::fAccUnit 
+ADXL355::dq_pop_front()
 {
-    if(len <= RW::RWByteMax)
-    {
-        uint8_t wcmd = (regaddr << 1) | WRITE;
-        uint8_t cmd_buf[len+1];
-        *cmd_buf = wcmd;
-        memcpy(cmd_buf+1,tmp_buf,len);
-
-        int ret = wiringPiSPIDataRW(_channel,cmd_buf,len+1);
-        if(ret > 0)
-            return ret-1;
-
-        print("write setMultiByte wcmd failed\n");
-        return 0;
-    }
-    print("setMiltiByte len over RW::RWByteMax = 4095\n");
-    return 0;
+    std::lock_guard<std::mutex> dq_pop_front_lock(deque_mutex);
+    fAccUnit _faccunit = dq_fAccUnitData.front();
+    dq_fAccUnitData.pop_front();
+    return _faccunit;
 }
 
-ssize_t ADXL355::ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit)
+ssize_t 
+ADXL355::ParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int type)
 {
-    // (2^20/2) == 524288 == acc_adc_num
-    _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
-    _faccUnit->fX = ((double)_accUnit->intX) * (1.0/ acc_adc_num) * AccMeasureRange; 
-    _faccUnit->fY = ((double)_accUnit->intY) * (1.0/ acc_adc_num) * AccMeasureRange; 
-    _faccUnit->fZ = ((double)_accUnit->intZ) * (1.0/ acc_adc_num) * AccMeasureRange; 
-
-    return true;
-}
-
-ssize_t ADXL355::PreParseAccData(ssize_t len)
-{
-    
-    //buf input should follow -> x data start, data set (9 bytes) as unit, so you need preprocess first 
-    
-    assert((len >= LenDataSet) && (len % LenDataSet == 0));
-    assert((buf[XDataMarkerPos+1] & 0b00000011) == AccDataMarker::isX );
-
-    int NumAccUnitParse = 0;
-
-    for(int ind = 0 ; ind < len ; ind += LenDataSet)
-    {
-        NumAccUnitParse += PreParseOneAccDataUnit(buf+ind,LenDataSet,TypeFifo);
-    }
-
-    return NumAccUnitParse;
-}
-
-ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int type)
-{
-    //tiem stamp should add 
-
-
     try
     {
         /* << or >> must add () to avoid unexpected behavior */
@@ -585,7 +408,7 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int typ
         else
             _MyAccUnit.intZ = uintZ;
 
-        ParseAccDataUnit(&_MyAccUnit,&_MyfAccUnit);
+        ParseOneAccDataUnit_int2float(&_MyAccUnit,&_MyfAccUnit);
         
         dq_push_back(_MyfAccUnit);
 
@@ -598,7 +421,20 @@ ssize_t ADXL355::PreParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int typ
     }
 }
 
-ssize_t ADXL355::readAxesDataOnce(uint8_t* tmp_buf/*9+1 bytes*/)
+ssize_t 
+ADXL355::ParseOneAccDataUnit_int2float(AccUnit* _accUnit, fAccUnit* _faccUnit)
+{
+    // (2^20/2) == 524288 == acc_adc_num
+    _faccUnit->time_ms = _accUnit->timestamp.tv_nsec * 1e-6 + _accUnit->timestamp.tv_sec * 1e3;
+    _faccUnit->fX = ((double)_accUnit->intX) * (1.0 / acc_adc_num) * AccMeasureRange; 
+    _faccUnit->fY = ((double)_accUnit->intY) * (1.0 / acc_adc_num) * AccMeasureRange; 
+    _faccUnit->fZ = ((double)_accUnit->intZ) * (1.0 / acc_adc_num) * AccMeasureRange; 
+
+    return true;
+}
+
+ssize_t 
+ADXL355::readAxesDataOnce(uint8_t* tmp_buf/*9+1 bytes*/)
 {
     //update timestamp
     timespec _t;
@@ -610,21 +446,11 @@ ssize_t ADXL355::readAxesDataOnce(uint8_t* tmp_buf/*9+1 bytes*/)
 
     // X_3 at 0x08
     ssize_t ret = readMultiByte(0x08, LenDataSet, tmp_buf);
-
-    if(ret > 0)
-    {
-        AccDataMarker marker = CheckDataMarker(LenDataAxis);
-        switch(marker)
-        {   /*write some process if you want to deal with not X axis data problem*/
-            default:
-                break;
-        }
-    }
-
     return ret;
 }
 
-ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
+ssize_t 
+ADXL355::readFifoDataOnce(/*need 3 bytes*/)
 {
     // FIFO_DATA at 0x11
     ssize_t ret = readMultiByte(0x11, LenDataAxis);
@@ -642,8 +468,11 @@ ssize_t ADXL355::readFifoDataOnce(/*need 3 bytes*/)
     return ret;
 }
 
-ssize_t ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
+//TODO:change the CheckDataMarker parameters
+ssize_t 
+ADXL355::readFifoDataSetOnce(/*need 9 bytes*/)
 {
+    // going to delete this function
     //update timestamp
     timespec _t;
     clock_gettime(CLOCK_REALTIME, &_t);
@@ -694,37 +523,8 @@ ssize_t ADXL355::readFifoDataSetOnce(uint8_t* tmp_buf/*need 9+1 bytes*/)
     return ret;
 }
 
-ADXL355::AccDataMarker ADXL355::CheckDataMarker(ssize_t len)
-{
-    if(len >= LenDataAxis)
-    {
-        uint8_t DataMarker = buf[XDataMarkerPos+1] & /*0b00000011*/
-                            ( GETMASK(getLength(x_axis_marker),getStartBit(x_axis_marker)) |
-                              GETMASK(getLength(empty_indicator),getStartBit(empty_indicator))
-                            );
-
-        switch(DataMarker)
-        {
-            case isEmpty:
-                //print("data get from reg_FIFO_DATA is invalid\n");
-                //-->not print out
-                break;
-
-            case Err_Len2Short:
-                print("datamarker in readFifoDataOnce get Err_Len2Short\n" \
-                      "Which means readback from reg_FIFO_DATA < reasonable bytes(3), plz check return value of readback\n"
-                );
-                break;
-            default:
-                break;
-        }
-        
-        return static_cast<AccDataMarker>(DataMarker);
-    }
-    return Err_Len2Short;
-}
-
-void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val)
+void 
+ADXL355::setSingleReg(uint8_t regaddr,uint8_t val)
 {
     uint8_t wcmd = (regaddr << 1) | WRITE;
     uint8_t w_single_byte[2] = {wcmd,val};
@@ -732,7 +532,8 @@ void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val)
     write(SPI_fd,w_single_byte,2);
 }
 
-void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
+void 
+ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
 {
     /*writemask for where to write -> 1*/
     ssize_t ret = readSingleByte(SPI_fd);
@@ -750,7 +551,8 @@ void ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
     write(SPI_fd,w_single_byte,2);
 }
 
-void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
+void 
+ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
 {
     uint8_t regaddr = getAddr(ri);
     ssize_t ret = readSingleByte(regaddr);
@@ -766,11 +568,10 @@ void ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
     uint8_t w_single_byte[2] = {wcmd,*buf};
 
     write(SPI_fd,w_single_byte,2);//maybe two byte
-
-    // clear buf
 }
 
-uint8_t ADXL355::getSingleBitPair(regIndex ri)
+uint8_t 
+ADXL355::getSingleBitPair(regIndex ri)
 {
     uint8_t regaddr = getAddr(ri);
     ssize_t ret = readSingleByte(regaddr);
@@ -784,6 +585,208 @@ uint8_t ADXL355::getSingleBitPair(regIndex ri)
 
     /* get value of bit pair */
     return (*buf >> getStartBit(ri));
+}
+
+// basic functions
+ssize_t 
+ADXL355::readSingleByte(uint8_t regaddr)
+{
+    return readMultiByte(regaddr,1);
+}
+
+ssize_t 
+ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
+{
+    
+    if(len <= RW::RWByteMax)
+    {
+        uint8_t rcmd = (regaddr << 1) | READ;
+        *buf = rcmd;
+        
+        int ret = wiringPiSPIDataRW(_channel,buf,len+1);
+        if(ret > 0)
+            return ret-1;
+        /*
+        you can't separate write and read owing to SPI SCLK trigger mechanism
+            ssize_t ret = write(SPI_fd,&rcmd,1);
+            if(ret > 0)
+            return read(SPI_fd,buf,len);
+        */
+
+        /*something bad happen*/
+        print("write readMultiByte rcmd failed\n");
+        return 0;
+    }
+    
+    print("readMiltiByte len over RW::RWByteMax = 4095\n");
+    return 0;
+}
+
+ssize_t 
+ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
+{
+    
+    if(len <= RW::RWByteMax)
+    {
+        uint8_t rcmd = (regaddr << 1) | READ;
+        *tmp_buf = rcmd;
+
+        // clean buf before send rcmd to prevent miswrite
+
+        int ret = wiringPiSPIDataRW(_channel,tmp_buf,len+1);
+        if(ret > 0)
+            return ret-1;
+        /*
+        you can't separate write and read owing to SPI SCLK trigger mechanism
+            ssize_t ret = write(SPI_fd,&rcmd,1);
+            if(ret > 0)
+            return read(SPI_fd,buf,len);
+        */
+
+        /*something bad happen*/
+        print("write readMultiByte rcmd failed\n");
+        return 0;
+    }
+    
+    print("readMiltiByte len over RW::RWByteMax = 4095\n");
+    return 0;
+}
+
+ssize_t 
+ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
+{
+    if(len <= RW::RWByteMax)
+    {
+        uint8_t wcmd = (regaddr << 1) | WRITE;
+        uint8_t cmd_buf[len+1];
+        *cmd_buf = wcmd;
+        memcpy(cmd_buf+1,tmp_buf,len);
+
+        int ret = wiringPiSPIDataRW(_channel,cmd_buf,len+1);
+        if(ret > 0)
+            return ret-1;
+
+        print("write setMultiByte wcmd failed\n");
+        return 0;
+    }
+    print("setMiltiByte len over RW::RWByteMax = 4095\n");
+    return 0;
+}
+
+// TODO buf change to tmp buf
+ADXL355::AccDataMarker 
+ADXL355::CheckDataMarker(ssize_t len)
+{
+    if(len >= LenDataAxis)
+    {
+        uint8_t DataMarker = buf[XDataMarkerPos+1] & /*0b00000011*/
+                            ( GETMASK(getLength(x_axis_marker),getStartBit(x_axis_marker)) |
+                              GETMASK(getLength(empty_indicator),getStartBit(empty_indicator))
+                            );
+
+        switch(DataMarker)
+        {
+            case isEmpty:
+                //print("data get from reg_FIFO_DATA is invalid\n");
+                //-->no print out
+                break;
+
+            case Err_Len2Short:
+                print("datamarker in readFifoDataOnce get Err_Len2Short\n" \
+                      "Which means readback from reg_FIFO_DATA < reasonable bytes(3), plz check return value of readback\n"
+                );
+                break;
+            default:
+                break;
+        }
+        
+        return static_cast<AccDataMarker>(DataMarker);
+    }
+    return Err_Len2Short;
+}
+
+void 
+ADXL355::resetThisAdxl355()
+{
+    StopMeasurement();
+    setSingleReg(getAddr(reset),0x52);  //from data sheet
+    StartMeasurement();
+    print("System reset finished \n");
+}
+
+bool 
+ADXL355::getStandByState()
+{
+    /*change to readSingleBitPair() later*/
+    StopMeasurement();
+    readSingleByte(getAddr(standby));
+    uint8_t u8read = *readBufPtr;
+    StartMeasurement();
+    return (u8read | GETMASK(getLength(standby),getStartBit(standby)));
+}
+
+// set the device into standby mode
+void 
+ADXL355::setStandByMode()
+{
+    StopMeasurement();
+    setSingleBitPair(regIndex::standby,1);
+}
+
+// set the device into measure mode
+void 
+ADXL355::setMeasureMode()
+{
+    setSingleBitPair(regIndex::standby,0);
+    StartMeasurement(); //start immediately
+}
+
+uint8_t 
+ADXL355::getPartID()
+{
+    StopMeasurement();
+    readSingleByte(getAddr(partid));
+    uint8_t u8read = *readBufPtr;
+    StartMeasurement();
+    return u8read;
+}
+
+ssize_t 
+ADXL355::getAllReg()
+{
+    //readMultiByte(getAddr(devid_ad),0x2f+1);
+}
+
+void 
+ADXL355::StartMeasurement()
+{
+    if(_updateThread && !_doMeasurement)
+        _doMeasurement = true;
+}
+
+void 
+ADXL355::StopMeasurement()
+{
+    if(_updateThread && _doMeasurement)
+    {
+        _doMeasurement = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));  // wait for measure thread done one loop
+    }
+}
+
+inline uint8_t ADXL355::getAddr(regIndex bIndex)
+{
+    return static_cast<uint8_t>(addr[bIndex]);
+}
+
+inline uint8_t ADXL355::getStartBit(regIndex bIndex)
+{
+    return static_cast<uint8_t>(startbit[bIndex]);
+}
+
+inline uint8_t ADXL355::getLength(regIndex bIndex)
+{
+    return static_cast<uint8_t>(length[bIndex]);
 }
 
 

@@ -10,10 +10,11 @@
 #include <deque>
 #include <thread>
 #include <mutex>
-extern "C" {
-#include <wiringPi.h>
-#include <wiringPiSPI.h>
-#include <signal.h>
+extern "C" 
+{
+    #include <wiringPi.h>
+    #include <wiringPiSPI.h>
+    #include <signal.h>
 }
 
 /* 
@@ -49,16 +50,22 @@ namespace LRA_ADXL355
         public:
         static ADXL355* InstanceArray[10];  // you need to mod if you need more than 10 adxl355 instances
 
-        int SPI_fd = 0;
-        double AccMeasureRange = dRange_4g; //+- 4.196g in default --> change to getRange later
-        uint8_t buf[4096] = {0};
-        timespec adxl355_birth_time;
         volatile bool _fifoINTRdyFlag = 0;
 
-        // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
         const uint8_t* readBufPtr = buf+1;    // where the read buf start. Read from this address of buf all the time
+        const double dRange_2g = 2.048*2;
+        const double dRange_4g = 4.096*2;
+        const double dRange_8g = 8.192*2;
 
-
+        uint8_t buf[4096] = {0};
+        int SPI_fd = 0;
+        double AccMeasureRange = dRange_4g; //+- 4.196g in default --> change to getRange later
+        
+        timespec adxl355_birth_time;
+        
+        
+        // ref https://saadquader.wordpress.com/2014/10/19/const-pointer-in-c-or-cplusplus/ -- read only 
+        
         typedef struct{
             timespec timestamp;
             int intX;
@@ -108,6 +115,8 @@ namespace LRA_ADXL355
 
         }fAccUnit;
 
+        deque<fAccUnit> dq_fAccUnitData;
+
         typedef struct fOffset{
             double fX;
             double fY;
@@ -121,12 +130,32 @@ namespace LRA_ADXL355
 
         }fOffset;
 
-        deque<fAccUnit> dq_fAccUnitData;
+        typedef struct s_Init
+        {
+            int spi_channel;
+            int spi_speed;
+            int spi_mode;
+            int acc_range;
+            bool autoSetOffset;
+            bool updateThread;
+            bool updateMode;
+            void (*isr_handler)();
 
-        const double dRange_2g = 2.048*2;
-        const double dRange_4g = 4.096*2;
-        const double dRange_8g = 8.192*2;
-
+            s_Init& operator=(s_Init& rhs)
+            {
+                spi_channel = rhs.spi_channel;
+                spi_speed = rhs.spi_speed;
+                spi_mode = rhs.spi_mode;
+                acc_range = rhs.acc_range;
+                autoSetOffset = rhs.autoSetOffset;
+                updateThread = rhs.updateThread;
+                updateMode = rhs.updateMode;
+                isr_handler = rhs.isr_handler;
+                return *this;
+            }
+        }s_Init;
+        
+        /*enum*/
         enum RW{
             WRITE = 0,
             READ = 1,
@@ -169,21 +198,15 @@ namespace LRA_ADXL355
             temp_adc_num = 4096,   // (2^12)
 
             MAX_INSTANCE_NUM = 10,
-
             INT1 = 29,
-
             AVG_data_size = 10000,
             
         };
 
         enum Value{
-
-
             Range_2g = 0b01,
             Range_4g = 0b10,
             Range_8g = 0b11,
-
-
         };
 
         enum regIndex{
@@ -519,10 +542,53 @@ namespace LRA_ADXL355
             /*empty indicator*/1,
         };
 
-        ADXL355(int channel, int speed,int mode,bool updateThread,bool updateMode, void (*isr_handler)(void));   // channel is CE pin index
+        /**
+         * @brief Default constructor. Using default channel(0), default speed(10M), default mode(0) 
+         *        updateThread off. No ISR function(polling mode)
+         * 
+         */
+        ADXL355();
+
+        /**
+         * @brief updateThread off. No ISR function(polling mode)
+         * 
+         * @param channel 
+         * @param speed 
+         * @param mode 
+         */
+        ADXL355(int channel, int speed, int mode);
+
+        /**
+         * @brief Construct a new ADXL355 object - INT mode using INT1(Pin 29 in WiringPi)
+         * 
+         * @param channel 
+         * @param speed 
+         * @param mode 
+         * @param updateThread 
+         * @param updateMode 
+         * @param isr_handler 
+         */
+        ADXL355(int channel, int speed, int mode, bool updateThread, bool updateMode, void (*isr_handler)(void));   // channel is CE pin index
+
+        /**
+         * @brief Destroy the ADXL355 object
+         * 
+         */
         ~ADXL355();
 
         /*Setting related*/
+        /**
+         * @brief Set all protected parameters to default value
+         * 
+         */
+        void setParametersDefault();
+
+        /**
+         * @brief init adxl355, no ISR function
+         * 
+         */
+        void init(bool autoSetOffset);
+
 
         /**
          * @brief read offset data of 3 axes
@@ -534,20 +600,46 @@ namespace LRA_ADXL355
         /**
          * @brief auto set offset, default 10000 samples - tune this at AVG_data_size
          * 
+         * @param samples 
          */
         void setOffset(unsigned int samples);
 
+        /**
+         * @brief Set the Offset to value of foffset
+         * 
+         * @param foffset 
+         */
         void setOffset(fOffset foffset);
 
+        /**
+         * @brief Set acceleration range to +-2g, 4g or 8g
+         * 
+         * @param range 
+         */
         void setAccRange(int range);
 
+        /**
+         * @brief Get acceleration range in unit g
+         * 
+         */
         double getAccRange();
 
+        
         static void isr_default();
 
         /*Thread safe related*/
 
+        /**
+         * @brief Update acceleration in background thread
+         * 
+         */
         void _updateInBackground();
+
+        /**
+         * @brief If interrupt up or polling mode, update acceleration data once 
+         * 
+         */
+        void _updateAccData(int Type);
 
         /**
          * @brief deque push back for thread safe
@@ -572,16 +664,7 @@ namespace LRA_ADXL355
          * @param len
          * @return ssize_t, true if parse successfully, or return false
          */
-        ssize_t PreParseOneAccDataUnit(const uint8_t* buf,ssize_t len, int type);
-
-        /**
-         * @brief preparse all acc data in buf into int
-         * 
-         * @param buf 
-         * @param len
-         * @return ssize_t , return how many groups of AccUnit parsed sucessfully 
-         */
-        ssize_t PreParseAccData(ssize_t len);
+        ssize_t ParseOneAccDataUnit(const uint8_t* buf,ssize_t len, int type);
 
         /**
          * @brief 
@@ -590,7 +673,7 @@ namespace LRA_ADXL355
          * @param _faccUnit 
          * @return ssize_t 
          */
-        ssize_t ParseAccDataUnit(AccUnit* _accUnit, fAccUnit* _faccUnit);
+        ssize_t ParseOneAccDataUnit_int2float(AccUnit* _accUnit, fAccUnit* _faccUnit);
 
         /**
          * @brief read data from X_axis register to Z_axis register directly
@@ -617,7 +700,7 @@ namespace LRA_ADXL355
         ssize_t readFifoDataSetOnce();
 
         /**
-         * @brief overload of given restored buffer(10 byte total)
+         * @brief overload of given restored buffer(10 byte total), safer
          * 
          * @param tmp_buf 
          * @return ssize_t 
@@ -809,15 +892,18 @@ namespace LRA_ADXL355
         //uint8_t getAddr(uint8_t uIndex);
 
         protected:
-        int _thisInstanceIndex = -1;
-        int _channel = 0;
+
+        int _thisInstanceIndex; // -1
+        int _channel;
+        int _speed;
+        int _mode;
+        bool _updateThread;
+        bool _exitThread;
+        bool _doMeasurement;
+        bool _updateMode;
+        std::mutex deque_mutex;
         AccUnit _MyAccUnit;
         fAccUnit _MyfAccUnit;
-        bool _updateThread = 0;
-        bool _exitThread = 0;
-        bool _doMeasurement = 0;
-        bool _updateMode = 0;
-        std::mutex deque_mutex;
     };
 }
 #endif
