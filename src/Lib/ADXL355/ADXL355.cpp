@@ -4,6 +4,11 @@ using namespace LRA_ADXL355;
 /* init static variable */
 ADXL355* ADXL355::InstanceArray[ADXL355::MAX_INSTANCE_NUM] = {nullptr};
 
+ADXL355::ADXL355()
+{
+    _initParameters = defaultParameters;
+}
+
 // TODO mod constructor
 ADXL355::ADXL355(int channel,
                  int speed,
@@ -60,6 +65,11 @@ ADXL355::ADXL355(int channel,
     /*Check range set*/
     getAccRange();
 
+    /*Set Sampling Rate*/
+    setSamplingRate(Value::SamplingRate_4000);
+
+    getSamplingRate();
+
     setMeasureMode();
 
     if(_updateMode == INT_update_mode)
@@ -85,26 +95,12 @@ ADXL355::ADXL355(int channel,
         std::thread(&ADXL355::_updateInBackground,this).detach();
     }
     
-        
 }
 
 ADXL355::~ADXL355()
 {
     _exitThread = 1;
     InstanceArray[_thisInstanceIndex] = nullptr;
-}
-
-void
-ADXL355::setParametersDefault()
-{
-    _thisInstanceIndex = -1;
-    _channel = Default::spi_channel;
-    _speed = Default::spi_speed;
-    _mode = Default::spi_mode;
-    _updateThread = 0;
-    _exitThread = 1;
-    _doMeasurement = false;
-    _updateMode = Default::polling_update_mode;
 }
 
 ADXL355::fOffset 
@@ -224,21 +220,24 @@ void
 ADXL355::setAccRange(int range)
 {
     StopMeasurement();
+    uint8_t val;
     switch(range)
     {
         case Value::Range_2g:
-            setSingleBitPair(regIndex::range, Range_2g);
+            val = Value::Range_2g;
             AccMeasureRange = dRange_2g;
             break;
         case Value::Range_8g:
-            setSingleBitPair(regIndex::range, Range_8g);
+            val = Value::Range_8g;
             AccMeasureRange = dRange_8g;
             break;
         default:
-            setSingleBitPair(regIndex::range, Range_4g);
+            val = Value::Range_4g;
             AccMeasureRange = dRange_4g;
             break;
     }
+    setSingleBitPair(regIndex::range, val);
+    _initParameters.acc_range = val;
     StartMeasurement();
 }
 
@@ -247,27 +246,124 @@ ADXL355::getAccRange()
 {
     StopMeasurement();
     uint8_t val = getSingleBitPair(regIndex::range);
-    double dRange;
     switch(val)
     {
         case Value::Range_2g:
-            dRange = dRange_2g;
+            AccMeasureRange = dRange_2g;
             break;
         case Value::Range_4g:
-            dRange = dRange_4g;
+            AccMeasureRange = dRange_4g;
             break;
         case Value::Range_8g:
-            dRange = dRange_8g;
+            AccMeasureRange = dRange_8g;
             break;
         default:
-            print("\n\n\nFatal Error -- Range out of range , plz check \n\n\n");
-            dRange = dRange_4g;
+            print("\n\n\nFatal Error -- Range out of range , plz check, below info is invalid \n\n\n");
             break;
     };
-    print("Measurement range is ± {:.3f} (g)\n",dRange/2);
-    AccMeasureRange = dRange;
+    print("Measurement range is ± {:.3f} (g)\n",AccMeasureRange/2);
+    _initParameters.acc_range = val;
     StartMeasurement();
     return AccMeasureRange;
+}
+
+void 
+ADXL355::setSamplingRate(int rate)
+{
+    StopMeasurement();
+    switch(rate)
+    {
+        case Value::SamplingRate_4000:
+            SamplingRateHz = dRate_4000;
+            break;
+        case Value::SamplingRate_2000:
+            SamplingRateHz = dRate_2000;
+            break;
+        case Value::SamplingRate_1000:
+            SamplingRateHz = dRate_1000;
+            break;
+        case Value::SamplingRate_500:
+            SamplingRateHz = dRate_500;
+            break;
+        case Value::SamplingRate_250:
+            SamplingRateHz = dRate_250;
+            break;
+        case Value::SamplingRate_125:
+            SamplingRateHz = dRate_125;
+            break;
+        case Value::SamplingRate_62:
+            SamplingRateHz = dRate_62;
+            break;
+        case Value::SamplingRate_31:
+            SamplingRateHz = dRate_31;
+            break;
+        case Value::SamplingRate_15:
+            SamplingRateHz = dRate_15;
+            break;
+        case Value::SamplingRate_8:
+            SamplingRateHz = dRate_8;
+            break;
+        case Value::SamplingRate_4:
+            SamplingRateHz = dRate_4;
+            break;
+        default:
+            rate = Value::SamplingRate_4000;
+            SamplingRateHz = dRate_4000;
+            break;
+    }
+    setSingleBitPair(regIndex::odr_lpf,(uint8_t)rate);
+    _initParameters.sampling_rate = rate;
+    StartMeasurement();
+}
+
+double
+ADXL355::getSamplingRate()
+{
+    StopMeasurement();
+    uint8_t val = getSingleBitPair(regIndex::odr_lpf);
+    switch(val)
+    {
+        case Value::SamplingRate_4000:
+            SamplingRateHz = dRate_4000;
+            break;
+        case Value::SamplingRate_2000:
+            SamplingRateHz = dRate_2000;
+            break;
+        case Value::SamplingRate_1000:
+            SamplingRateHz = dRate_1000;
+            break;
+        case Value::SamplingRate_500:
+            SamplingRateHz = dRate_500;
+            break;
+        case Value::SamplingRate_250:
+            SamplingRateHz = dRate_250;
+            break;
+        case Value::SamplingRate_125:
+            SamplingRateHz = dRate_125;
+            break;
+        case Value::SamplingRate_62:
+            SamplingRateHz = dRate_62;
+            break;
+        case Value::SamplingRate_31:
+            SamplingRateHz = dRate_31;
+            break;
+        case Value::SamplingRate_15:
+            SamplingRateHz = dRate_15;
+            break;
+        case Value::SamplingRate_8:
+            SamplingRateHz = dRate_8;
+            break;
+        case Value::SamplingRate_4:
+            SamplingRateHz = dRate_4;
+            break;
+        default:
+            print("\n\n\nFatal Error -- Sampling Rate out of range , plz check ,below info is invalid \n\n\n");
+            break;
+    }
+    print("Sampling Rate is {:.3f} (Hz)\n",SamplingRateHz);
+    _initParameters.sampling_rate = val;
+    StartMeasurement();
+    return SamplingRateHz;
 }
 
 void 

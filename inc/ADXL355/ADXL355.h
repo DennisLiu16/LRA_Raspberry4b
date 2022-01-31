@@ -57,10 +57,22 @@ namespace LRA_ADXL355
         const double dRange_4g = 4.096*2;
         const double dRange_8g = 8.192*2;
 
+        const double dRate_4000 = 4000.0;
+        const double dRate_2000 = 2000.0;
+        const double dRate_1000 = 1000.0;
+        const double dRate_500  = 500.0;
+        const double dRate_250  = 250.0;
+        const double dRate_125  = 125.0;
+        const double dRate_62   = 62.5;
+        const double dRate_31   = 31.25;
+        const double dRate_15   = 15.625;
+        const double dRate_8    = 7.813;
+        const double dRate_4    = 3.906;
+
         uint8_t buf[4096] = {0};
         int SPI_fd = 0;
         double AccMeasureRange = dRange_4g; //+- 4.196g in default --> change to getRange later
-        
+        double SamplingRateHz = dRate_4000;
         timespec adxl355_birth_time;
         
         
@@ -136,9 +148,10 @@ namespace LRA_ADXL355
             int spi_speed;
             int spi_mode;
             int acc_range;
+            int sampling_rate;
+            int updateMode;
             bool autoSetOffset;
             bool updateThread;
-            bool updateMode;
             void (*isr_handler)();
 
             s_Init& operator=(s_Init& rhs)
@@ -147,6 +160,7 @@ namespace LRA_ADXL355
                 spi_speed = rhs.spi_speed;
                 spi_mode = rhs.spi_mode;
                 acc_range = rhs.acc_range;
+                sampling_rate = rhs.sampling_rate;
                 autoSetOffset = rhs.autoSetOffset;
                 updateThread = rhs.updateThread;
                 updateMode = rhs.updateMode;
@@ -154,6 +168,18 @@ namespace LRA_ADXL355
                 return *this;
             }
         }s_Init;
+
+        s_Init defaultParameters{
+            .spi_channel = Default::spi_channel,
+            .spi_speed = Default::spi_speed,
+            .spi_mode = Default::spi_mode,
+            .acc_range = Value::Range_4g,
+            .sampling_rate = Value::SamplingRate_4000,
+            .updateMode = Default::Manual_update_mode, // update by yourself
+            .autoSetOffset = false,
+            .updateThread = Default::close_updateThread,
+            .isr_handler = nullptr,
+        };
         
         /*enum*/
         enum RW{
@@ -189,10 +215,13 @@ namespace LRA_ADXL355
             spi_channel = 0,    //CE number
             spi_mode = 0,    //from datasheet
 
+            close_updateThread = 0,
             open_updateThread = 1,
 
             polling_update_mode = 0,
             INT_update_mode = 1,
+            Manual_update_mode = 2,
+
             acc_adc_num = 1048576, // (2^20)
             offset_adc_num = 65536,// (2^16)
             temp_adc_num = 4096,   // (2^12)
@@ -207,7 +236,21 @@ namespace LRA_ADXL355
             Range_2g = 0b01,
             Range_4g = 0b10,
             Range_8g = 0b11,
+
+            SamplingRate_4000 = 0x00,
+            SamplingRate_2000 = 0x01,
+            SamplingRate_1000 = 0x02,
+            SamplingRate_500  = 0x03,
+            SamplingRate_250  = 0x04,
+            SamplingRate_125  = 0x05,
+            SamplingRate_62   = 0x06,
+            SamplingRate_31   = 0x07,
+            SamplingRate_15   = 0x08,
+            SamplingRate_8    = 0x09,
+            SamplingRate_4    = 0x10,
         };
+
+
 
         enum regIndex{
             // 55 regbit
@@ -577,11 +620,6 @@ namespace LRA_ADXL355
         ~ADXL355();
 
         /*Setting related*/
-        /**
-         * @brief Set all protected parameters to default value
-         * 
-         */
-        void setParametersDefault();
 
         /**
          * @brief init adxl355, no ISR function
@@ -623,6 +661,10 @@ namespace LRA_ADXL355
          * 
          */
         double getAccRange();
+
+        void setSamplingRate(int rate);
+
+        double getSamplingRate();
 
         
         static void isr_default();
@@ -892,18 +934,23 @@ namespace LRA_ADXL355
         //uint8_t getAddr(uint8_t uIndex);
 
         protected:
-
+        bool _exitThread;
+        bool _doMeasurement;
         int _thisInstanceIndex; // -1
+        
         int _channel;
         int _speed;
         int _mode;
         bool _updateThread;
-        bool _exitThread;
-        bool _doMeasurement;
         bool _updateMode;
+        s_Init _initParameters;
+       
         std::mutex deque_mutex;
         AccUnit _MyAccUnit;
         fAccUnit _MyfAccUnit;
+
+
+
     };
 }
 #endif
