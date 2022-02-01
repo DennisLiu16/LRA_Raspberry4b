@@ -150,7 +150,9 @@ namespace LRA_ADXL355
             int acc_range;
             int sampling_rate;
             int updateMode;
+            int INT_pin;
             bool autoSetOffset;
+            unsigned int SetOffsetDataSize;
             bool updateThread;
             void (*isr_handler)();
 
@@ -161,26 +163,16 @@ namespace LRA_ADXL355
                 spi_mode = rhs.spi_mode;
                 acc_range = rhs.acc_range;
                 sampling_rate = rhs.sampling_rate;
-                autoSetOffset = rhs.autoSetOffset;
-                updateThread = rhs.updateThread;
                 updateMode = rhs.updateMode;
+                INT_pin = rhs.INT_pin;
+                autoSetOffset = rhs.autoSetOffset;
+                SetOffsetDataSize = rhs.SetOffsetDataSize;
+                updateThread = rhs.updateThread;
                 isr_handler = rhs.isr_handler;
                 return *this;
             }
         }s_Init;
 
-        s_Init defaultParameters{
-            .spi_channel = Default::spi_channel,
-            .spi_speed = Default::spi_speed,
-            .spi_mode = Default::spi_mode,
-            .acc_range = Value::Range_4g,
-            .sampling_rate = Value::SamplingRate_4000,
-            .updateMode = Default::Manual_update_mode, // update by yourself
-            .autoSetOffset = false,
-            .updateThread = Default::close_updateThread,
-            .isr_handler = nullptr,
-        };
-        
         /*enum*/
         enum RW{
             WRITE = 0,
@@ -593,25 +585,11 @@ namespace LRA_ADXL355
         ADXL355();
 
         /**
-         * @brief updateThread off. No ISR function(polling mode)
+         * @brief Construct a new ADXL355 object
          * 
-         * @param channel 
-         * @param speed 
-         * @param mode 
+         * @param initParameters 
          */
-        ADXL355(int channel, int speed, int mode);
-
-        /**
-         * @brief Construct a new ADXL355 object - INT mode using INT1(Pin 29 in WiringPi)
-         * 
-         * @param channel 
-         * @param speed 
-         * @param mode 
-         * @param updateThread 
-         * @param updateMode 
-         * @param isr_handler 
-         */
-        ADXL355(int channel, int speed, int mode, bool updateThread, bool updateMode, void (*isr_handler)(void));   // channel is CE pin index
+        ADXL355(s_Init initParameters);
 
         /**
          * @brief Destroy the ADXL355 object
@@ -622,11 +600,19 @@ namespace LRA_ADXL355
         /*Setting related*/
 
         /**
-         * @brief init adxl355, no ISR function
+         * @brief init adxl355 with parameters _initParameters
          * 
          */
-        void init(bool autoSetOffset);
+        void init();
 
+        /**
+         * @brief 
+         * 
+         * @param para 
+         * @return true 
+         * @return false 
+         */
+        bool checkParameter(s_Init& para);
 
         /**
          * @brief read offset data of 3 axes
@@ -634,6 +620,12 @@ namespace LRA_ADXL355
          * @return fOffset 
          */
         fOffset readOffset();
+
+        /**
+         * @brief set offset by _initParameter
+         * 
+         */
+        void setOffset();
 
         /**
          * @brief auto set offset, default 10000 samples - tune this at AVG_data_size
@@ -948,9 +940,6 @@ namespace LRA_ADXL355
         std::mutex deque_mutex;
         AccUnit _MyAccUnit;
         fAccUnit _MyfAccUnit;
-
-
-
     };
 }
 #endif

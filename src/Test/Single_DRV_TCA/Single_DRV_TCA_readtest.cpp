@@ -47,9 +47,23 @@ int main()
     Xdrv.setStandBy(DRV::STANDBY_ready);   
     Xdrv.set6S();
     Xdrv.printAllRegIndex();
-    
-    ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::INT_update_mode,irq_test_0);
 
+    ADXL355::s_Init init_para;
+    
+    init_para.spi_channel = ADXL355::Default::spi_channel;
+    init_para.spi_mode = ADXL355::Default::spi_mode;
+    init_para.spi_speed = ADXL355::Default::spi_speed;
+    init_para.updateMode = ADXL355::Default::INT_update_mode;
+    init_para.updateThread = ADXL355::Default::open_updateThread;
+    init_para.acc_range = ADXL355::Value::Range_4g;
+    init_para.sampling_rate = ADXL355::Value::SamplingRate_4000;
+    init_para.INT_pin = ADXL355::Default::INT1;
+    init_para.isr_handler = irq_test_0;
+    init_para.autoSetOffset = true;
+    init_para.SetOffsetDataSize = ADXL355::Default::AVG_data_size;
+
+    ADXL355 adxl355(init_para);
+    
     // write to fd var
     fdAcc = fopen("/home/ubuntu/LRA/Code/data/log/Acc.txt","wb");
     fdRTP = fopen("/home/ubuntu/LRA/Code/data/log/RTP.txt","wb");
@@ -79,7 +93,7 @@ int main()
             last_t_loop = t_loop;
             clock_gettime(CLOCK_REALTIME, &t_loop);
             clock_gettime(CLOCK_REALTIME, &t1);
-            print("loop time is {:.3f}\n", time_diff_ms(&last_t_loop, &t_loop));
+            //print("loop time is {:.3f}\n", time_diff_ms(&last_t_loop, &t_loop));
             // get size
             size_t accNum = adxl355.dq_fAccUnitData.size();
 

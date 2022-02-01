@@ -4,21 +4,27 @@ using namespace LRA_ADXL355;
 /* init static variable */
 ADXL355* ADXL355::InstanceArray[ADXL355::MAX_INSTANCE_NUM] = {nullptr};
 
-ADXL355::ADXL355()
+ADXL355::ADXL355(s_Init initParameters)
 {
-    _initParameters = defaultParameters;
+    // check parameters
+    if(!checkParameter(initParameters))
+        exit(EXIT_FAILURE);
+    _initParameters = initParameters;
+    _thisInstanceIndex = -1;
+    init();
 }
 
-// TODO mod constructor
-ADXL355::ADXL355(int channel,
-                 int speed,
-                 int mode,
-                 bool updateThread,
-                 bool updateMode,
-                 void (*isr_handler)(void)
-                 )
-    {
-     /* put this pointer into InstanceArray*/
+ADXL355::~ADXL355()
+{
+    _exitThread = 1;
+    InstanceArray[_thisInstanceIndex] = nullptr;
+}
+
+void 
+ADXL355::init()
+{
+    s_Init& para = _initParameters; 
+    /* put this pointer into InstanceArray*/
     int i = 0;
     while( i < MAX_INSTANCE_NUM)
     {
@@ -38,16 +44,10 @@ ADXL355::ADXL355(int channel,
     InstanceArray[_thisInstanceIndex] = this;
 
     /* init spi */
-    SPI_fd = wiringPiSPISetupMode(channel,speed,mode);
+    SPI_fd = wiringPiSPISetupMode(para.spi_channel,para.spi_speed,para.spi_mode);
     if(SPI_fd > 0)
-        print("Instance {} open SPI successed\n",_thisInstanceIndex + 1);
-
-    _channel = channel;
-    _speed = speed;
-    _mode = mode;
-    _updateMode = updateMode;
-    _updateThread = updateThread;
-
+        print("Instance No.{} open SPI successed\n",_thisInstanceIndex + 1);
+    
     /* birth time */
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
@@ -60,47 +60,126 @@ ADXL355::ADXL355(int channel,
     print("clock resolution: {} ns\n", tt.tv_nsec);
 
     /*Set range*/
-    setAccRange(Range_4g);
+    setAccRange(para.acc_range);
 
     /*Check range set*/
     getAccRange();
 
     /*Set Sampling Rate*/
-    setSamplingRate(Value::SamplingRate_4000);
+    setSamplingRate(para.sampling_rate);
 
     getSamplingRate();
 
     setMeasureMode();
 
-    if(_updateMode == INT_update_mode)
+    if(para.updateMode == INT_update_mode)
     {
         /*You should set your interrupt pin here or before thread initial and make sure wiringPiSetup () in your main thread first;*/
-        int INT_PIN1 = Default::INT1;
+        int INT_PIN = para.INT_pin;
 
-        pinMode(INT_PIN1, INPUT);
-        pullUpDnControl(INT_PIN1,PUD_DOWN);
+        pinMode(INT_PIN, INPUT);
+        pullUpDnControl(INT_PIN,PUD_DOWN);
     
-        wiringPiISR(INT_PIN1,INT_EDGE_RISING,isr_handler);
+        wiringPiISR(INT_PIN,INT_EDGE_RISING,para.isr_handler);
 
         // DRDY_OFF should be zero to enable DRDY pin 
     }
 
     // auto set off set val, default 10000 samples
-    setOffset(Default::AVG_data_size);
-
+    if(para.autoSetOffset)
+        setOffset(para.SetOffsetDataSize);
+    
     //Thread para
-    if(_updateThread)
+    if(para.updateThread)
     {
         _exitThread = 0;
         std::thread(&ADXL355::_updateInBackground,this).detach();
     }
-    
 }
 
-ADXL355::~ADXL355()
+bool
+ADXL355::checkParameter(s_Init& para)
 {
-    _exitThread = 1;
-    InstanceArray[_thisInstanceIndex] = nullptr;
+    // valid check
+    if(para.spi_channel < 0)
+    {
+        perror("spi channel should >= 0");
+        return false;
+    }
+        
+    if(para.spi_speed <= 0)
+    {
+        perror("spi speed should > 0");
+        return false;
+    }
+        
+    if(para.spi_mode < 0)
+    {
+        perror("spi mode should >= 0");
+        return false;
+    }
+        
+    if(para.acc_range < Value::Range_2g || para.acc_range > Value::Range_8g)
+    {
+        perror("Acceleration out of range, plz check enum Value");
+        return false;
+    }
+
+    if(para.sampling_rate > Value::SamplingRate_4 || para.sampling_rate < Value::SamplingRate_4000)
+    {
+        perror("Sampling rate out of range, plz check enum Value");
+        return false;
+    }
+
+    if(para.SetOffsetDataSize <= 0)
+    {
+        string str = format(fg(fmt::color::red)|
+                            fmt::emphasis::bold,
+                            "Warning -- data size need > 0, you need to mod SetOffsetDataSize by yourself\n");
+        print(str);
+    }
+
+    // combination check
+
+    if(para.updateMode != Default::Manual_update_mode &&
+       para.updateThread == Default::close_updateThread)
+    {
+        perror("Open a thread if you not use Manual_update_mode");
+        return false;
+    }
+
+    if(para.updateMode == Default::Manual_update_mode &&
+       para.updateThread == Default::open_updateThread)
+       
+    {
+        string str = format(fg(fmt::color::red)|
+                            fmt::emphasis::bold,
+                            "Warning -- you need to turn on _fifoINTRdyFlag by yourself\n");
+        print(str);
+    }
+
+    if(para.updateMode == Default::INT_update_mode &&
+       para.isr_handler == nullptr)
+    {
+        perror("ISR function is nullptr, you need to create a void callback function by yourself");
+        return false;
+    }
+
+    if(para.updateMode == Default::INT_update_mode &&
+       para.INT_pin < 0)
+    {
+        perror("Interrupt pin should >= 0");
+        return false;
+    }
+
+    if(para.autoSetOffset == 1 &&
+       para.SetOffsetDataSize <= 0)
+    {
+        perror("SetoffsetDataSize should > 0");
+        return false;
+    }
+
+    return true;
 }
 
 ADXL355::fOffset 
@@ -128,6 +207,12 @@ ADXL355::readOffset()
     StartMeasurement();
 
     return foffset;
+}
+
+void
+ADXL355::setOffset()
+{
+    setOffset(_initParameters.SetOffsetDataSize);
 }
 
 void 
@@ -699,7 +784,7 @@ ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
         uint8_t rcmd = (regaddr << 1) | READ;
         *buf = rcmd;
         
-        int ret = wiringPiSPIDataRW(_channel,buf,len+1);
+        int ret = wiringPiSPIDataRW(_initParameters.spi_channel,buf,len+1);
         if(ret > 0)
             return ret-1;
         /*
@@ -729,7 +814,7 @@ ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
 
         // clean buf before send rcmd to prevent miswrite
 
-        int ret = wiringPiSPIDataRW(_channel,tmp_buf,len+1);
+        int ret = wiringPiSPIDataRW(_initParameters.spi_channel,tmp_buf,len+1);
         if(ret > 0)
             return ret-1;
         /*
@@ -758,7 +843,7 @@ ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
         *cmd_buf = wcmd;
         memcpy(cmd_buf+1,tmp_buf,len);
 
-        int ret = wiringPiSPIDataRW(_channel,cmd_buf,len+1);
+        int ret = wiringPiSPIDataRW(_initParameters.spi_channel,cmd_buf,len+1);
         if(ret > 0)
             return ret-1;
 
