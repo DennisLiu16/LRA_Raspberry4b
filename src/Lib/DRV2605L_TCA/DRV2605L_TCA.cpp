@@ -31,12 +31,18 @@ DRV::DRV2605L_TCA()
 
 DRV::DRV2605L_TCA(int EN, int channel)
 {
+    if(channel > 7)
+    {
+        perror("channel from 0 to 7");
+        exit(EXIT_FAILURE);
+    }
+    
     _EN = EN;
     _channel = channel;
     _thisControlReg = 1 << _channel;
 
     // bus init
-    if(_bus < 0)
+    if(_bus <= 0)
     {
         try{
             /*bus open*/
@@ -68,7 +74,7 @@ DRV::DRV2605L_TCA(int EN, int channel)
 DRV::~DRV2605L_TCA()
 {
     --_drvNum;
-    if(_drvNum == 0)
+    if(_drvNum == 0 && _bus > 0)
         i2c_close(_bus);
 }
 

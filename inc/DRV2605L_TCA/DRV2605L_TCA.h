@@ -17,7 +17,6 @@
 #include <PI/LRA_PI_Util.h>
 extern "C" {
 #include <wiringPi.h>
-#include <signal.h>
 }
 
 namespace LRA_DRV2605L_TCA
@@ -744,27 +743,29 @@ namespace LRA_DRV2605L_TCA
         /*Func region*/
         ///////////////
 
-        //constructor
         /**
-         * @brief Construct a new drv2605l tca object
-         * @details default 
+         * @brief Custom constructor, expand by yourself
+         * 
          */
         DRV2605L_TCA();
 
         /**
-         * @brief Construct a new drv2605l tca object
+         * @brief Construct a new drv2605l tca object, with EN pin (WiringPi) and i2c channel
          * 
          * @param EN_pin 
          * @param channel 
+         * @details 
+         * 1. init static var at .cpp file
+         * 2. use same i2c bus (To TCA first)
          */
         DRV2605L_TCA(int EN_pin, int channel);
 
         //destructor
         /**
-         * @brief destructor drv2605l tca object
-         * @details 
-         * 1. 
-         * 2. 
+         * @brief destructor of drv2605l 
+         * @details
+         * 1. This project use TCA9548A as I2C adaptor, so use drvNum to record number of drv device
+         * 2. If no remain drv device, close i2c bus
          * 
          */
         ~DRV2605L_TCA();
