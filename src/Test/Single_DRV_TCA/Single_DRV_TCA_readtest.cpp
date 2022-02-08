@@ -149,7 +149,7 @@ int main()
             clock_gettime(CLOCK_REALTIME, &t2);
             double time_diff = time_diff_us(&t1,&t2);
             if(time_diff > 100)
-                //print("cost (us): {:.3f} \n", time_diff);
+                print("cost (us): {:.3f} \n", time_diff);
 
             // flag reset
             _loop_timer = false;
