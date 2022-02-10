@@ -479,7 +479,6 @@ namespace LRA_DRV2605L{
 
         protected:
             I2CDevice i2c;
-            Data data;
             
             /*Register related*/
             void set_MODE(uint8_t);      /*Mode*/

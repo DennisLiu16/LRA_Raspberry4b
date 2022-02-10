@@ -6,8 +6,6 @@ DRV2605L::DRV2605L(int EN_pin,int slave_id /*=SLAVE_DEFAULT_ID*/){
 
     this->slave_id = slave_id;
     this->EN_pin = EN_pin;
-    /*class constructor*/
-    this->data = Data();
 }
 
 DRV2605L::~DRV2605L(){
