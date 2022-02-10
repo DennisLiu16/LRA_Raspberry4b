@@ -31,7 +31,7 @@ SOFTWARE.
 */ 
 
 /* I2C default delay */
-#define I2C_DEFAULT_DELAY 100 //?
+#define I2C_DEFAULT_DELAY 10 //?
 
 /* I2C internal address max length */
 #define INT_ADDR_MAX_BYTES 4
