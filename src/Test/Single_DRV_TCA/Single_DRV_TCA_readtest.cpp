@@ -157,6 +157,8 @@ int main()
         
     }
     //close
+    fclose(fdAcc);
+    fclose(fdRTP);
     Xdrv.setStandBy(DRV::STANDBY_standby);
     adxl355.StopMeasurement();
 }
