@@ -66,7 +66,6 @@ int main(int argc, char **argv)
                prep_stmt2->setFloat(3,3.865);
                prep_stmt2->setFloat(4,-95.21);
                prep_stmt2->addBatch();
-
          }
             prep_stmt->executeBatch();
             prep_stmt2->executeBatch();

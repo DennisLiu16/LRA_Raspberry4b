@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <tuple>
+#include <stdexcept>
 
 // c std libraries
 extern "C"
@@ -23,35 +25,53 @@ namespace LRA_Data
 {
     using namespace std;
     using namespace std::filesystem;
+    namespace fs = std::filesystem;
     class TXT
     {
         public:
-            int err = 0;
             FILE* fd;
 
             /*Constructors*/
-            TXT(string& path, string& file_name, const char* write_mode);
+            TXT(string& path, string& file_name, const char* write_mode, bool auto_reopen);
 
             /*Destructors*/
             ~TXT();
 
             /*Update*/
-            void updatePath(string& path);
+            void updatePath(string& nPath);
 
-            /**
-             * @brief open fd of txt from given path and file_name
-             * 
-             */
+            void updateFileName(string& nFilename);
+
+            /*Open*/
+            void open(fs::path&, const char*);  // default argument need to know at compile time
+
             void open();
 
+            /*Parse*/
+            std::tuple<fs::path, fs::path> parse2_path_name(const char*);
+
+            /*Close*/
             void close();
         
         protected:
+            /*Form path*/
+            /**
+             * @brief include path valid check
+             * 
+             * @param path 
+             * @param filename 
+             * @return fs::path 
+             */
+            fs::path formPath(string& path, string& filename);
 
         private:
+            string _path;
+            string _filename;
             fs::path _full_path = "";
             fs::path _opened_path = "";
             char* _write_mode;
+            bool _automode;
+            
     };
 
     class MariaDB

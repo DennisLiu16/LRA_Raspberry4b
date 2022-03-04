@@ -82,6 +82,8 @@ int main()
 
     // create a Timer 
     Timer myTimer = Timer();
+    double loop_avg_time = 0.0;
+    long long loop_time_num = 0;
 
     myTimer.setInterval(timer_flag,9920u);
     
@@ -153,10 +155,16 @@ int main()
 
             // flag reset
             _loop_timer = false;
+
+            // avg calculation
+            loop_avg_time += time_diff;
+            ++loop_time_num;
         }
         
     }
     //close
+    loop_avg_time /= loop_time_num;
+    print("Loop Average Time is {:.4f} (us)\n", loop_avg_time);
     fclose(fdAcc);
     fclose(fdRTP);
     Xdrv.setStandBy(DRV::STANDBY_standby);
