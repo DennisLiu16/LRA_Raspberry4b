@@ -28,10 +28,6 @@
                 }
             ]
         },
-        
-        
-
-
         {
             "name": "(gdb) spi_test",
             "type": "cppdbg",

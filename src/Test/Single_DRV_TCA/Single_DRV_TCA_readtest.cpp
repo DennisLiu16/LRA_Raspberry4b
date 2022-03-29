@@ -85,7 +85,7 @@ int main()
     double loop_avg_time = 0.0;
     long long loop_time_num = 0;
 
-    myTimer.setInterval(timer_flag,9920u);
+    myTimer.setInterval(timer_flag,9920u); // it depends on hardware
     
     while(_running)
     {
@@ -113,7 +113,7 @@ int main()
             
             // set RTP
             val++;
-            
+            val = 255;
             Xdrv.setRTP(val);
             
             timespec t_tmp; 
