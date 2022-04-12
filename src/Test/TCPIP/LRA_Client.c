@@ -172,6 +172,15 @@ int send_back(int parseable, int socket_fd)
 }
 
 /**
+ * @brief create new socket
+ * 
+ */
+int create_socket()
+{
+    return socket(PF_INET, SOCK_STREAM, 0);
+}
+
+/**
  * @brief parse tx_buf and return tx_buf type
  * 
  * @param tx_buf 
@@ -253,7 +262,7 @@ int main(int argc, char* argv)
     extern int errno;
 
     // build socket 
-    int socket_fd = socket(PF_INET, SOCK_STREAM, 0);    // IPv4 - TCPIP socket
+    int socket_fd = create_socket();    // IPv4 - TCPIP socket
     if (socket_fd < 0) {
         printf("Fail to create socket\n");
         exit(EXIT_FAILURE);
@@ -317,6 +326,7 @@ int main(int argc, char* argv)
 
             case SEND_RECONNECT_CMD:
                 // reconnect requirement
+                socket_fd = create_socket();
                 try_connection(&socket_fd, server_info, max_retry_num, sleep_time);
                 send_back(ACTIVE_RECONNECT, socket_fd);
             
