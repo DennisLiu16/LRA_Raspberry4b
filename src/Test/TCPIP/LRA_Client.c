@@ -99,15 +99,18 @@ int userinput_check()
     // read stdin 
     char user_input[MAX_BUF_BYTE];
     int buf_count = read(STDIN_FILENO, user_input, MAX_BUF_BYTE-1);
-    user_input[MAX_BUF_BYTE] = '\0';
+
+    // add null char
+    int last = buf_count < MAX_BUF_BYTE ? buf_count + 1 : MAX_BUF_BYTE;
+    user_input[last-1] = '\0';  // idx from 0
     
-    if (!strcmp(user_input, "q") || !strcmp(user_input, "quit"))
+    if (!strcmp(user_input, "q\n") || !strcmp(user_input, "quit\n"))
         return EXIT_PROCESS;
 
-    if (!strcmp(user_input, "d") || !strcmp(user_input, "disconnect") || !strcmp(user_input, "disc"))
+    if (!strcmp(user_input, "d\n") || !strcmp(user_input, "disconnect\n") || !strcmp(user_input, "disc\n"))
         return SEND_DISCONNECT_CMD;
 
-    if (!strcmp(user_input, "r") || !strcmp(user_input, "reconnection") || !strcmp(user_input, "reconn"))
+    if (!strcmp(user_input, "r\n") || !strcmp(user_input, "reconnection\n") || !strcmp(user_input, "reconn\n"))
         return SEND_RECONNECT_CMD;
         
     return OK;
