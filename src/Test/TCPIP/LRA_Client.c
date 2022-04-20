@@ -318,7 +318,7 @@ int main(int argc, char* argv)
                 // active disconnect send here 
                 send_back(ACTIVE_DISCONNECT, socket_fd);
                 // TODO should wait for recv confirm signal from server then close 
-                printf("Wait for confirm signal");
+                printf("Wait for confirm signal\n");
                 close(socket_fd);
                 printf("Socket fd closed\n");
                 socket_fd = 0;
