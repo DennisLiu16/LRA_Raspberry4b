@@ -33,7 +33,6 @@ extern "C"
 
 namespace LRA_TCPIP
 {
-    using namespace std;
     using namespace LRA_PI_Util;
 
     // info var
@@ -113,7 +112,7 @@ namespace LRA_TCPIP
          * @param sockinfo 
          * @param conn_retry_num 
          * @param conn_duration 
-         * @param nonblock_rcv only for recv, connect set to be block mode.
+         * @param nonblock_rcv only for recv, connect set to be nonblock mode.
          * send will be blocked by send_back()
          */
         Client(sockaddr_in sockinfo, uint conn_retry_num, uint conn_duration, bool nonblock_rcv);
@@ -125,7 +124,7 @@ namespace LRA_TCPIP
          * @param sockinfo 
          * @param conn_retry_num 
          * @param conn_duration 
-         * @param nonblock_rcv only for recv, connect set to be block mode.
+         * @param nonblock_rcv only for recv, connect set to be nonblock mode.
          * send will be blocked by send_back()
          * @param debug 
          */
@@ -171,7 +170,7 @@ namespace LRA_TCPIP
          * 
          * @param s 
          */
-        void check_tcpip_usrin(const string &s);
+        void usrin_check_tcpip(const string &s);
 
         /**
          * @brief Set the socket opt object

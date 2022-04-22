@@ -50,7 +50,7 @@ Client::Client(const uint buf_len, sockaddr_in sockinfo, uint conn_retry_num, ui
 
 bool Client::try_connection()
 {
-    uint retry_num = 0;
+    uint retry_num = 1;
 
     if(isvalid(socket_fd)) {   // socket_fd check
         print("socket already existed{}, reuse it!\n", socket_fd);
@@ -62,16 +62,20 @@ bool Client::try_connection()
             print("Failed to create socket\n");
             return false;
         } else 
-            print("Make a new socket successfully\n");
+            print("Make a new socket successfully\n\n");
     }
 
     // FIXME:should add check server_info
+
+    // set socket to nonblock if nonblock_rcv_flag on
+    if(nonblock_rcv_flag)
+        set_sock_nblock_after_connection();
         
     // try to connect to server
     while(connect(socket_fd, (sockaddr*)&server_info, sizeof(server_info)) < 0) {
-
+        //FIXME:errno EWOULDBLOCK in connect state should be ok
         cout << "Connect to socket fd failed: " << retry_num << endl;
-        if (retry_num > max_retry) {
+        if (retry_num > max_retry - 1) {
             cout << "Max retry limitation exceeded, connection aborted" << endl;
             return false;
         }
@@ -82,11 +86,7 @@ bool Client::try_connection()
 
     // connection built
     cout << "Connect server " << inet_ntoa(server_info.sin_addr) << ":" << ntohs(server_info.sin_port)
-    << "succeeded" << endl;
-
-    // set socket to nonblock if nonblock_rcv_flag on
-    if(nonblock_rcv_flag)
-        set_sock_nblock_after_connection();
+    << " succeeded" << endl;
 
     return true;
 }
@@ -231,7 +231,7 @@ void Client::sig_handler(Signal sig)
     }
 }
 
-void Client::check_tcpip_usrin(const string &s)
+void Client::usrin_check_tcpip(const string &s)
 {
     if(s == "r" || s == "reconnection") { // trig reconnection
         sig_handler(Signal::trig_reconnection);
