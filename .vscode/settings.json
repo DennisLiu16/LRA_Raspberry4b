@@ -53,7 +53,8 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "map": "cpp",
-        "iomanip": "c"
+        "iomanip": "c",
+        "lra_tcpip.h": "c"
     },
     "cmake.configureOnOpen": false,
     "C_Cpp.errorSquiggles": "Enabled"
