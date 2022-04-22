@@ -155,7 +155,7 @@ vector<string> Client::split(const string &s, const char delim)
 {
     vector<string> token;
     string str;
-    istringstream tokenStream(s);
+    istringstream tokenStream(s.c_str());
     while(getline(tokenStream, str, delim)) {
         token.push_back(str);
     }
