@@ -1,3 +1,4 @@
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ADXL355)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Single_DRV_TCA)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/TCPIP)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/TCPIP_with_DRV)
