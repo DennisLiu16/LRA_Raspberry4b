@@ -50,7 +50,7 @@ void* clientSocket(void* param)
         printf("%s\n", rx_buf);
 
         // send new data
-        strcpy(tx_buf, "12.000,0.5,0.32,1324.023,777");
+        strcpy(tx_buf, "12.000,15.5,0.32,1324.023,777\0");
 
         // senback to client
         if (send(info->sockfd, tx_buf, sizeof(tx_buf), 0) < 0) {
