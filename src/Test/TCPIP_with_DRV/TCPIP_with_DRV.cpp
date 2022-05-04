@@ -59,7 +59,7 @@ bool usrin_check()
 int main()
 {
     wiringPiSetup();
-    DRV Xdrv(25,0);
+    DRV Xdrv(7,0);
     Xdrv.setStandBy(DRV::STANDBY_ready);   
     Xdrv.set6S();
     Xdrv.printAllRegIndex();
@@ -73,7 +73,7 @@ int main()
     init_para.updateThread = ADXL355::Default::open_updateThread;
     init_para.acc_range = ADXL355::Value::Range_4g;
     init_para.sampling_rate = ADXL355::Value::SamplingRate_4000;
-    init_para.INT_pin = ADXL355::Default::INT1;
+    init_para.INT_pin = 6;
     init_para.isr_handler = irq_test_0;
     init_para.autoSetOffset = true;
     init_para.SetOffsetDataSize = ADXL355::Default::AVG_data_size;
