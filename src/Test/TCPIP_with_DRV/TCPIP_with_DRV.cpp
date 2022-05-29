@@ -55,9 +55,48 @@ bool usrin_check()
     return ret;
 }
 
-// main
-int main()
+bool check_main_args(int argc, int version)
 {
+    switch(version)
+    {
+        case 1:
+            // argv[0] : ./path_to/TCPIP_with_DRV
+            // argv[1] : server_ip
+            if(argc == 2)
+                return true;
+            return false;
+        break;
+    }
+    return false;
+}
+
+// main
+int main(int argc, char* argv[])
+{
+    /*parse main args*/
+    #define V_SERVERIP 1
+    bool arg_valid = check_main_args(argc, V_SERVERIP);
+    
+    // TCPIP var (with main args version)
+    char* ip;
+    int port = 8787;
+    if(arg_valid) {
+        ip = (char*)malloc(sizeof(char)*strlen(argv[1]));
+        strcpy(ip,argv[1]);
+    }else {
+        const char local_ip[] = "192.168.0.113";
+        ip = (char*)malloc(sizeof(char)*strlen(local_ip));
+        strcpy(ip,local_ip);
+    }
+
+    print("Server Ip is {}\n", ip);
+    sleep(2);
+
+    // const char local_ip[] = "192.168.0.113";
+    // char* ip;
+    // ip = (char*)malloc(sizeof(char)*strlen(local_ip));
+    // strcpy(ip,local_ip);
+
     wiringPiSetup();
     DRV Xdrv(7,0);
     Xdrv.setStandBy(DRV::STANDBY_ready);   
@@ -101,13 +140,6 @@ int main()
     Timer myTimer = Timer();
 
     myTimer.setInterval(timer_flag_up, 10000u);
-
-    // TCPIP var
-    const char local_ip[] = "192.168.0.113";
-    char* ip;
-    ip = (char*)malloc(sizeof(char)*strlen(local_ip));
-    strcpy(ip,local_ip);
-    int port = 8787;
 
     struct sockaddr_in server_info = {};
     server_info.sin_family = AF_INET;
