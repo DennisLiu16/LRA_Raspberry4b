@@ -34,7 +34,7 @@ namespace LRA_DRV2605L_TCA
         typedef enum{
             // I2C slave id (slave device address)
             TCA_SLAVE_ID = 0x70,
-            DRV_SLAVE_ID = 0x5f, // 0x5a default?
+            DRV_SLAVE_ID = 0x5a, // 0x5a default?
             TCA_REGADDR  = 0x00,
 
             // TCA9548A channel
