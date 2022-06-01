@@ -37,7 +37,7 @@ ADXL355::init()
     }
     if(_thisInstanceIndex < 0)
     {
-        print("Instance array need to be enlarged\n");
+        flushed_print("Instance array need to be enlarged\n");
         return;
     }
         
@@ -45,19 +45,19 @@ ADXL355::init()
 
     /* init spi */
     SPI_fd = wiringPiSPISetupMode(para.spi_channel,para.spi_speed,para.spi_mode);
-    if(SPI_fd > 0)
-        print("Instance No.{} open SPI successed\n",_thisInstanceIndex + 1);
+    if(SPI_fd > 0) 
+        flushed_print("Instance No.{} open SPI successed\n",_thisInstanceIndex + 1);
     
     /* birth time */
     clock_gettime(CLOCK_REALTIME, &adxl355_birth_time);
 
     /* reset sys */
     resetThisAdxl355();
-    print("partid is {}\n",getPartID());
+    flushed_print("partid is {}\n",getPartID());
 
     struct timespec tt;
     clock_getres(CLOCK_REALTIME, &tt);
-    print("clock resolution: {} ns\n", tt.tv_nsec);
+    flushed_print("clock resolution: {} ns\n", tt.tv_nsec);
 
     /*Set range*/
     setAccRange(para.acc_range);
@@ -136,7 +136,7 @@ ADXL355::checkParameter(s_Init& para)
         string str = format(fg(fmt::color::red)|
                             fmt::emphasis::bold,
                             "Warning -- data size need > 0, you need to mod SetOffsetDataSize by yourself\n");
-        print(str);
+        flushed_print(str);
     }
 
     // combination check
@@ -155,7 +155,7 @@ ADXL355::checkParameter(s_Init& para)
         string str = format(fg(fmt::color::red)|
                             fmt::emphasis::bold,
                             "Warning -- you need to turn on _fifoINTRdyFlag by yourself\n");
-        print(str);
+        flushed_print(str);
     }
 
     if(para.updateMode == Default::INT_update_mode &&
@@ -224,8 +224,8 @@ ADXL355::setOffset(unsigned int samples)
     timespec front, end, diff;
     clock_gettime(CLOCK_REALTIME,&front);
     
-    print("\nStart auto offset setting...\n");
-    print("Samples : {} \n\n",samples);
+    flushed_print("\nStart auto offset setting...\n");
+    flushed_print("Samples : {} \n\n",samples);
     // get avg 
     while(dq_fAccUnitData.size() < samples)
     {
@@ -234,7 +234,7 @@ ADXL355::setOffset(unsigned int samples)
 
     clock_gettime(CLOCK_REALTIME,&end);
 
-    print("Collect {} data take {:6.3f} (ms)\n",AVG_data_size,time_diff_ms(&front,&end));
+    flushed_print("Collect {} data take {:6.3f} (ms)\n",AVG_data_size,time_diff_ms(&front,&end));
 
     clock_gettime(CLOCK_REALTIME,&front);
 
@@ -253,8 +253,8 @@ ADXL355::setOffset(unsigned int samples)
     
     clock_gettime(CLOCK_REALTIME,&end);
 
-    print("Calculate average take {:6.3f} (us)\n\n",time_diff_us(&front,&end));
-    print("fX : {:6.3f}, fY : {:6.3f}, fZ : {:6.3f} \n",faccunit.fX,faccunit.fY,faccunit.fZ);
+    flushed_print("Calculate average take {:6.3f} (us)\n\n",time_diff_us(&front,&end));
+    flushed_print("fX : {:6.3f}, fY : {:6.3f}, fZ : {:6.3f} \n",faccunit.fX,faccunit.fY,faccunit.fZ);
 
     fOffset foffset;
     foffset.fX = faccunit.fX;
@@ -283,7 +283,7 @@ ADXL355::setOffset(ADXL355::fOffset foffset)
         ABS(intZ) > (offset_adc_num >> 1) )
     {
         // out of range
-        print("offset set out of range \n");
+        flushed_print("offset set out of range \n");
         return;
     }
 
@@ -343,10 +343,10 @@ ADXL355::getAccRange()
             AccMeasureRange = dRange_8g;
             break;
         default:
-            print("\n\n\nFatal Error -- Range out of range , plz check, below info is invalid \n\n\n");
+            flushed_print("\n\n\nFatal Error -- Range out of range , plz check, below info is invalid \n\n\n");
             break;
     };
-    print("Measurement range is ± {:.3f} (g)\n",AccMeasureRange/2);
+    flushed_print("Measurement range is ± {:.3f} (g)\n",AccMeasureRange/2);
     _initParameters.acc_range = val;
     StartMeasurement();
     return AccMeasureRange;
@@ -442,10 +442,10 @@ ADXL355::getSamplingRate()
             SamplingRateHz = dRate_4;
             break;
         default:
-            print("\n\n\nFatal Error -- Sampling Rate out of range , plz check ,below info is invalid \n\n\n");
+            flushed_print("\n\n\nFatal Error -- Sampling Rate out of range , plz check ,below info is invalid \n\n\n");
             break;
     }
-    print("Sampling Rate is {:.3f} (Hz)\n",SamplingRateHz);
+    flushed_print("Sampling Rate is {:.3f} (Hz)\n",SamplingRateHz);
     _initParameters.sampling_rate = val;
     StartMeasurement();
     return SamplingRateHz;
@@ -462,7 +462,7 @@ ADXL355::isr_default()
 void 
 ADXL355::_updateInBackground()
 {
-    print("Start ADXL355 update in background\n");
+    flushed_print("Start ADXL355 update in background\n");
 
     /*init parameters*/
     AccUnit _accunit;
@@ -474,7 +474,7 @@ ADXL355::_updateInBackground()
         if(_doMeasurement)
             _updateAccData(AccDataMarker::TypeAxes);
     }
-    print("Leaving update thread\n");
+    flushed_print("Leaving update thread\n");
 }
 
 void 
@@ -597,7 +597,7 @@ ADXL355::ParseOneAccDataUnit(const uint8_t* buf, ssize_t len, int type)
     }
     catch(std::exception &e)
     {
-        print("%s\n",e.what());
+        flushed_print("%s\n",e.what());
         return false;
     }
 }
@@ -720,7 +720,7 @@ ADXL355::setSingleReg(uint8_t regaddr,uint8_t val,uint8_t writemask)
     ssize_t ret = readSingleByte(SPI_fd);
     if(ret < 1)
     {
-        print("set with mask input failed -- read \n");
+        flushed_print("set with mask input failed -- read \n");
         return;
     }
     *buf = *readBufPtr & (~writemask);       // buf[1] & readmask assign to buf[0]
@@ -739,7 +739,7 @@ ADXL355::setSingleBitPair(regIndex ri,uint8_t val)
     ssize_t ret = readSingleByte(regaddr);
     if(ret == 0)
     {
-        print("set single bit pair failed -- read stage \n");
+        flushed_print("set single bit pair failed -- read stage \n");
         return;
     }
 
@@ -758,7 +758,7 @@ ADXL355::getSingleBitPair(regIndex ri)
     ssize_t ret = readSingleByte(regaddr);
     if(ret == 0)
     {
-        print("get single bit pair failed -- read stage \n");
+        flushed_print("get single bit pair failed -- read stage \n");
         return 0;
     }
 
@@ -795,11 +795,11 @@ ADXL355::readMultiByte(uint8_t regaddr, ssize_t len)
         */
 
         /*something bad happen*/
-        print("write readMultiByte rcmd failed\n");
+        flushed_print("write readMultiByte rcmd failed\n");
         return 0;
     }
     
-    print("readMiltiByte len over RW::RWByteMax = 4095\n");
+    flushed_print("readMiltiByte len over RW::RWByteMax = 4095\n");
     return 0;
 }
 
@@ -825,11 +825,11 @@ ADXL355::readMultiByte(uint8_t regaddr, ssize_t len, uint8_t *tmp_buf)
         */
 
         /*something bad happen*/
-        print("write readMultiByte rcmd failed\n");
+        flushed_print("write readMultiByte rcmd failed\n");
         return 0;
     }
     
-    print("readMiltiByte len over RW::RWByteMax = 4095\n");
+    flushed_print("readMiltiByte len over RW::RWByteMax = 4095\n");
     return 0;
 }
 
@@ -847,10 +847,10 @@ ADXL355::setMultiByte(uint8_t regaddr, ssize_t len,uint8_t* tmp_buf)
         if(ret > 0)
             return ret-1;
 
-        print("write setMultiByte wcmd failed\n");
+        flushed_print("write setMultiByte wcmd failed\n");
         return 0;
     }
-    print("setMiltiByte len over RW::RWByteMax = 4095\n");
+    flushed_print("setMiltiByte len over RW::RWByteMax = 4095\n");
     return 0;
 }
 
@@ -868,12 +868,12 @@ ADXL355::CheckDataMarker(ssize_t len)
         switch(DataMarker)
         {
             case isEmpty:
-                //print("data get from reg_FIFO_DATA is invalid\n");
+                //flushed_print("data get from reg_FIFO_DATA is invalid\n");
                 //-->no print out
                 break;
 
             case Err_Len2Short:
-                print("datamarker in readFifoDataOnce get Err_Len2Short\n" \
+                flushed_print("datamarker in readFifoDataOnce get Err_Len2Short\n" \
                       "Which means readback from reg_FIFO_DATA < reasonable bytes(3), plz check return value of readback\n"
                 );
                 break;
@@ -892,7 +892,7 @@ ADXL355::resetThisAdxl355()
     StopMeasurement();
     setSingleReg(getAddr(reset),0x52);  //from data sheet
     StartMeasurement();
-    print("System reset finished \n");
+    flushed_print("System reset finished \n");
 }
 
 bool 

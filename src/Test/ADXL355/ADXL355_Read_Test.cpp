@@ -10,7 +10,7 @@ void irq_test_0()
 int main()
 {
     wiringPiSetup ();
-    print("Start Reading Test\n");
+    flushed_print("Start Reading Test\n");
 
     // for polling 
     //ADXL355 adxl355(ADXL355::spi_channel,ADXL355::spi_speed,ADXL355::spi_mode,ADXL355::open_updateThread,ADXL355::polling_update_mode,ADXL355::isr_default);
@@ -39,7 +39,7 @@ int main()
     double last_now = 0.0;
 
     ADXL355::fOffset foffset =  adxl355.readOffset();
-    print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
+    flushed_print("offset : {:6.5f}, {:6.5f}, {:6.5f}\n",foffset.fX,foffset.fY,foffset.fZ);
 
     adxl355.getAccRange();
 
@@ -55,7 +55,7 @@ int main()
 
             if(ptime > 0.3)
             {
-                print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
+                flushed_print("now : {:6.3f}  (ms) |  record time : {:6.3f} (ms) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                   now,
                   faccunit.time_ms,
                   ptime,
@@ -64,12 +64,12 @@ int main()
                   faccunit.fY,
                   faccunit.fZ,
                   adxl355.dq_fAccUnitData.size()
-                );   //print out test
+                );   //flushed_print out test
             }
             
             if(now - last_now > 1000)
             {
-                print("now : {:6.3f}  (s) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
+                flushed_print("now : {:6.3f}  (s) | parse delay : {:6.3f} (ms) | record interval : {:6.3f} (ms)| x = {:6.3f} g | y = {:6.3f} g | z = {:6.3f} g | {}\n",
                 now/1000,
                 ptime,
                 faccunit.time_ms - last_record_time,
@@ -77,12 +77,12 @@ int main()
                 faccunit.fY,
                 faccunit.fZ,
                 adxl355.dq_fAccUnitData.size()
-                );   //print out test
+                );   //flushed_print out test
                 last_now += 1000;
             }
             // assign last val
             last_record_time = faccunit.time_ms;
         }
     }
-    print("Leaving ADXL main thread\n");
+    flushed_print("Leaving ADXL main thread\n");
 }

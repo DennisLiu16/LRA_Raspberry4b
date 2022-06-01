@@ -121,7 +121,7 @@ void DRV2605L::set_LRA_6s()
     set_LRAOLP(LRAOLP_OL_LRA_PERIOD_default);/*set this if you enable LRA open loop*/
 
     /*check*/
-    print("set LRA done \n");
+    flushed_print("set LRA done \n");
 }
 
 ssize_t DRV2605L::read(uint32_t reg_addr,void *buf,size_t len){
@@ -167,7 +167,7 @@ void DRV2605L::print_all_register()
 
     for(uint8_t i = 0; i < REG_NUM; i++)
     {
-        print( "{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6}\n",
+        flushed_print( "{0:>{5}}{1:>{5}}{2:>{5}}{3:>{5}}{4:>{5}}{6}\n",
         format("{:#04x}",i),
         format("{:02x}",all[i]),
         format("{:02x}",Default_Value[i]),
@@ -281,7 +281,7 @@ void DRV2605L::run_RTPtest()
 inline void DRV2605L::set_amplitude(uint8_t amp)
 {
     set_RTP(amp);
-    print("LRA resonance frequency : {:.3f} Hz , amp = {}\n",get_operating_hz(),amp);
+    flushed_print("LRA resonance frequency : {:.3f} Hz , amp = {}\n",get_operating_hz(),amp);
 }
 
 /*Get function*/
@@ -311,14 +311,14 @@ void DRV2605L::get_auto_calibration_info()
 {
     if( (read(REG_Status) & (1<<3)) != 0 )
     {
-        print("Auto calibration failed\n");
+        flushed_print("Auto calibration failed\n");
     }
     else
     {
-        print("--------------------------\n");
-        print("Auto Calibration successed\n");
-        print("LRA resonance frequency : {:.3f} Hz\n",get_operating_hz());
-        print("Leaving Auto Calibration Mode\n");
+        flushed_print("--------------------------\n");
+        flushed_print("Auto Calibration successed\n");
+        flushed_print("LRA resonance frequency : {:.3f} Hz\n",get_operating_hz());
+        flushed_print("Leaving Auto Calibration Mode\n");
     }
         
 }
@@ -462,7 +462,7 @@ void DRV2605L::set_VVM(uint8_t content)
 /*--------------------------Private---------------------------*/
 void DRV2605L::info(uint32_t reg_addr,uint8_t content)
 {
-    print("Register address is {0} : {1} {2}, hex : {3}\n",
+    flushed_print("Register address is {0} : {1} {2}, hex : {3}\n",
         format(emphasis::bold | fg(color::cyan),"{:#04x}",reg_addr),
         format(emphasis::bold | fg(color::red),"{:04b}",(content>>4)),
         format(emphasis::bold | fg(color::yellow),"{:04b}",(0b00001111)&content),

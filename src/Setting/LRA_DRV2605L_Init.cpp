@@ -13,7 +13,7 @@ void signal_handler(int signum)
     /*can't use in vs code debug mode?*/
     if(signum == SIGINT)
     {
-        print("\nCtrl+C triggered, leaving process\n");
+        flushed_print("\nCtrl+C triggered, leaving process\n");
         if(x_drv.is_init)
             x_drv.stop();
         exit(1);
@@ -24,7 +24,7 @@ int main(){
 
     /*register signal*/
     if(signal(SIGINT,signal_handler)==SIG_ERR){
-        print("Failed to get signal\n");
+        flushed_print("Failed to get signal\n");
     }
 
     /*set up global*/
@@ -35,15 +35,15 @@ int main(){
     /*single read test*/
         // uint8_t test;
         // test = x_drv.read(0x00);
-        // print("%x\n",test);
-    /*print all register test*/
+        // flushed_print("%x\n",test);
+    /*flushed_print all register test*/
         //x_drv.print_all_register();
     /*read mutiple bytes test*/
         // uint8_t *result = new uint8_t[6] ;
         // x_drv.read(0x0,result,6);
         // for(int i = 0;i < 6 ;i++)
         // {
-        //     print("{:x}\n",*(result+i));
+        //     flushed_print("{:x}\n",*(result+i));
         // }
     /*write singletest*/
         // x_drv.write(0x01,0x40);

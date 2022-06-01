@@ -55,7 +55,7 @@ DRV::DRV2605L_TCA(int EN, int channel)
         }
         catch(ErrorType e)
         {
-            print("{}\n",Error::getErrorName(e));
+            flushed_print("{}\n",Error::getErrorName(e));
         }
     }
 
@@ -92,7 +92,7 @@ DRV::TCA_selectMultiChannel(uint8_t controlReg/* ch should be 8 bits to present 
         return;
     }
 
-    print("TCA_selectMultiChannel failed\n");
+    flushed_print("TCA_selectMultiChannel failed\n");
 }
 
 void 
@@ -118,7 +118,7 @@ DRV::multiRegWrite(uint8_t regAddr, const void* content, size_t len)
         /*equal to reg_addr>=1 && reg_addr <= REG_MAX*/
         if( ((regAddr-1) | (AddrMax - regAddr)) < 0){
             /*out of range*/
-            print("Out of range. The error reg_addr is {:#04x}",regAddr);
+            flushed_print("Out of range. The error reg_addr is {:#04x}",regAddr);
             throw ERR_DRV2605L_REGISTER_ADDRESS_DISMATCH;
         }
 
@@ -126,7 +126,7 @@ DRV::multiRegWrite(uint8_t regAddr, const void* content, size_t len)
         return i2c_write(&i2c_DRV,regAddr,content,len);
     }
     catch(ErrorType e){
-        print("{}\n",Error::getErrorName(e));
+        flushed_print("{}\n",Error::getErrorName(e));
         return -1;
     }
 }
@@ -148,7 +148,7 @@ DRV::multiRegRead(uint8_t regAddr, void* buf, size_t len)
         /*equal to reg_addr>=0 && reg_addr <= REG_MAX*/
         if( (regAddr | (AddrMax - regAddr)) < 0){
             /*out of range*/
-            print("Out of range. The error reg_addr is {:#04x}",regAddr);
+            flushed_print("Out of range. The error reg_addr is {:#04x}",regAddr);
             throw ERR_DRV2605L_REGISTER_ADDRESS_DISMATCH;
         }
 
@@ -156,7 +156,7 @@ DRV::multiRegRead(uint8_t regAddr, void* buf, size_t len)
         return i2c_read(&i2c_DRV,regAddr,buf,len);
     }
     catch(ErrorType e){
-        print("{}\n",Error::getErrorName(e));
+        flushed_print("{}\n",Error::getErrorName(e));
         return -1;
     }
 }
@@ -177,7 +177,7 @@ DRV::setBitPair(int regIndex, uint8_t val)
     /*range check*/
     if((regIndex | (IndexMax - regIndex)) < 0)
     {
-        print("RegIndex out of range -- setBitPair\n");
+        flushed_print("RegIndex out of range -- setBitPair\n");
         return;
     }
     /*if length == 8, set directly*/
@@ -189,7 +189,7 @@ DRV::setBitPair(int regIndex, uint8_t val)
     else{
         if(multiRegRead(addr[regIndex], &c, 1) < 0)
         {
-            print("read reg failed -- setBitPair\n");
+            flushed_print("read reg failed -- setBitPair\n");
             return;
         }
 
@@ -217,12 +217,12 @@ DRV::getBitPair(int regIndex)
 {
     if((regIndex | (IndexMax - regIndex)) < 0)
     {
-        print("RegIndex out of range -- getBitPair\n");
+        flushed_print("RegIndex out of range -- getBitPair\n");
         return 0;
     }
     uint8_t buf;
     if(multiRegRead(addr[regIndex], &buf, 1) < 0)
-        print("getBitPair failed \n");
+        flushed_print("getBitPair failed \n");
     
     /*if bitPair = whole register*/
     if(length[regIndex] == 8)
@@ -245,7 +245,7 @@ DRV::getBitPair(int regIndex, uint8_t controlReg)
 void 
 DRV::reset()
 {
-    print("No.{} device reset cmd\n", _channel);
+    flushed_print("No.{} device reset cmd\n", _channel);
     setBitPair(regIndex::DEV_RESET, DEV_RESET_reset,  _thisControlReg);
     sleep(1);
 }
@@ -291,7 +291,7 @@ DRV::getStatusInfo()
     uint8_t buf;
     if(multiRegRead(Addr::Status, &buf, 1) < 0)
     {
-        print("getStatusInfo failed\n");
+        flushed_print("getStatusInfo failed\n");
         return;
     }
 
@@ -303,27 +303,27 @@ DRV::getStatusInfo()
     switch(device_id)
     {
         case 3: 
-            print("The device is : DRV2605 (contains licensed ROM library, does not contain RAM)\n");
+            flushed_print("The device is : DRV2605 (contains licensed ROM library, does not contain RAM)\n");
             break;
         case 4:
-            print("The device is : DRV2604 (contains RAM, does not contain licensed ROM library)\n");
+            flushed_print("The device is : DRV2604 (contains RAM, does not contain licensed ROM library)\n");
             break;
         case 6:
-            print("The device is : DRV2604L (low-voltage version of the DRV2604 device)\n");
+            flushed_print("The device is : DRV2604L (low-voltage version of the DRV2604 device)\n");
             break;
         case 7:
-            print("The device is : DRV2605L (low-voltage version of the DRV2605 device)\n");
+            flushed_print("The device is : DRV2605L (low-voltage version of the DRV2605 device)\n");
             break;
     }
 
     std::string str = (!diag_result) ? "Diag/calibration : Passed\n" : "Diag/calibration : Failed\n";
-    print("{}\n",str);
+    flushed_print("{}\n",str);
 
     str = (!over_temp) ? "Device overtemp\n" : "Temp normal\n";
-    print("{}\n",str);
+    flushed_print("{}\n",str);
 
     str = (!oc_detect) ? "Overcurrent detected\n" : "Current noraml\n";
-    print("{}\n",str);
+    flushed_print("{}\n",str);
 }
 
 double
@@ -543,14 +543,14 @@ void
 DRV::printAllRegIndex()
 {   string s = format("|{:^20} | {:^4} | {:^5} : {}","regIndex name","dec","hex","description|");
     string line = format("{0:-^{1}}","",s.size());
-    print("{0:^}\n{1}\n{0:^}\n",line,s);
+    flushed_print("{0:^}\n{1}\n{0:^}\n",line,s);
     for(int index = 0; index < NUM_REG; ++index)
     {
         uint8_t val = getBitPair(index);
         
         switchInfo(index, val);
     }
-    print("\n\n");
+    flushed_print("\n\n");
 }
 
 void
@@ -908,8 +908,8 @@ DRV::switchInfo(int index, uint8_t val)
             str = "";
             break;
     }
-    print("|{:^20} | {:^4} | {:^#5X} : {}\n",regName[index], val, val, str);
-    print("|{:-^20} | {:-^4} | {:-^5}   {}\n","", "", "", "");
+    flushed_print("|{:^20} | {:^4} | {:^#5X} : {}\n",regName[index], val, val, str);
+    flushed_print("|{:-^20} | {:-^4} | {:-^5}   {}\n","", "", "", "");
 }
 
 // LRA project setting 
@@ -950,7 +950,7 @@ DRV::set6S()
 
     /*Custom*/
 
-    print("set 6S done \n");
+    flushed_print("set 6S done \n");
 }
 
 /////////////

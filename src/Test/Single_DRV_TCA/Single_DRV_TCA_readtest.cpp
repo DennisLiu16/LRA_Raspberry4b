@@ -36,7 +36,7 @@ bool quit_check()
     cin >> userInput;
     if(userInput == "q" || userInput == "quit")
         return true;
-    print("Input \" {}\" is invalid \n\n", userInput);
+    flushed_print("Input \" {}\" is invalid \n\n", userInput);
     return false;
 }
 
@@ -93,7 +93,7 @@ int main()
             last_t_loop = t_loop;
             clock_gettime(CLOCK_REALTIME, &t_loop);
             clock_gettime(CLOCK_REALTIME, &t1);
-            //print("loop time is {:.3f}\n", time_diff_ms(&last_t_loop, &t_loop));
+            //flushed_print("loop time is {:.3f}\n", time_diff_ms(&last_t_loop, &t_loop));
             // get size
             size_t accNum = adxl355.dq_fAccUnitData.size();
 
@@ -140,8 +140,8 @@ int main()
                 {
                     timespec now;
                     clock_gettime(CLOCK_REALTIME, &now);
-                    print("\n\nLeave time : {:.3f} (s)\n\n", time_diff_ms(&adxl355.adxl355_birth_time, &now)/1000.0);
-                    print("Leaving Main Thread\n");
+                    flushed_print("\n\nLeave time : {:.3f} (s)\n\n", time_diff_ms(&adxl355.adxl355_birth_time, &now)/1000.0);
+                    flushed_print("Leaving Main Thread\n");
                     _running = 0;
                 }
             }
@@ -149,7 +149,7 @@ int main()
             clock_gettime(CLOCK_REALTIME, &t2);
             double time_diff = time_diff_us(&t1,&t2);
             if(time_diff > 100)
-                print("cost (us): {:.3f} \n", time_diff);
+                flushed_print("cost (us): {:.3f} \n", time_diff);
 
             // flag reset
             _loop_timer = false;

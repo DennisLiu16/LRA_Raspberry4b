@@ -53,16 +53,16 @@ bool Client::try_connection()
     uint retry_num = 1;
 
     if(isvalid(socket_fd)) {   // socket_fd check
-        print("socket already existed{}, reuse it!\n", socket_fd);
+        flushed_print("socket already existed{}, reuse it!\n", socket_fd);
         return true;
     } else {    // make a new socket
         // FIXME:IP version  and flags should can be modified by args
         socket_fd = socket(PF_INET, SOCK_STREAM, 0);
         if(!isvalid(socket_fd)) {
-            print("Failed to create socket\n");
+            flushed_print("Failed to create socket\n");
             return false;
         } else 
-            print("Make a new socket successfully\n\n");
+            flushed_print("Make a new socket successfully\n\n");
     }
 
     // FIXME:should add check server_info
@@ -168,7 +168,7 @@ void Client::sig_handler(Signal sig)
     {
         case Signal::force: // send back checksum
             if(debug_mode) {
-                print("timestamp: {0:.3f}(s), x: {1:.3f}(N), y: {2:.3f}(N), z: {3:.3f}(N), checksum: {4}\n",
+                flushed_print("timestamp: {0:.3f}(s), x: {1:.3f}(N), y: {2:.3f}(N), z: {3:.3f}(N), checksum: {4}\n",
                         data.timestamp,
                         data.x,
                         data.y,
@@ -185,23 +185,23 @@ void Client::sig_handler(Signal sig)
             break;
 
         case Signal::unparseable:
-            print("**data unparseable**\n");
+            flushed_print("**data unparseable**\n");
             tx_buf = S_UNPARSEABLE;
             send_back();
             break;
 
         case Signal::recv_err:
-            print("recv error, socket valid\n");
+            flushed_print("recv error, socket valid\n");
             // FIXME: How to fix this?
             break;
 
         case Signal::socket_invalid:
-            print("socket invalid\n");
+            flushed_print("socket invalid\n");
             // FIXME:need to recover socket?
             break;
         
         case Signal::disconnection:
-            print("Info: disconnection required from server\n");
+            flushed_print("Info: disconnection required from server\n");
             // destroy socket
             close(socket_fd);
             break;
@@ -214,19 +214,19 @@ void Client::sig_handler(Signal sig)
 
         case Signal::reconnection:
             // maybe impossible, it's a server's function
-            print("Info: reconnection required from server\n");
+            flushed_print("Info: reconnection required from server\n");
             break;
 
         case Signal::trig_reconnection:
-            print("Trig reconnection\n");
+            flushed_print("Trig reconnection\n");
             if(try_connection())
-                print("Reconnect successfully\n");
+                flushed_print("Reconnect successfully\n");
             else
-                print("Reconnect failed\n");
+                flushed_print("Reconnect failed\n");
             break;
         
         default:
-            print("invalid socket, plz check connection state\n");
+            flushed_print("invalid socket, plz check connection state\n");
         
     }
 }

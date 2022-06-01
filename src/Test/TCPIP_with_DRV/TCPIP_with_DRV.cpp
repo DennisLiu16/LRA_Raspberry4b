@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         strcpy(ip,local_ip);
     }
 
-    print("Server Ip is {}\n", ip);
+    flushed_print("Server Ip is {}\n", ip);
     sleep(2);
 
     // const char local_ip[] = "192.168.0.113";
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
                 );
                 cmd = (uint8_t)client->data.x;
                 Xdrv.setRTP(cmd);
-                print("time: {:.3f}(ms), new cmd: {}\n", time_diff_ms(&adxl355.adxl355_birth_time,&start) ,cmd);
+                flushed_print("time: {:.3f}(ms), new cmd: {}\n", time_diff_ms(&adxl355.adxl355_birth_time,&start) ,cmd);
             }
 
             timespec t_tmp; 
@@ -210,8 +210,8 @@ int main(int argc, char* argv[])
                 if(usrin_check()) { // leave process
                     timespec now;
                     clock_gettime(CLOCK_REALTIME, &now);
-                    print("\n\nLeave time : {:.3f} (s)\n\n", time_diff_ms(&adxl355.adxl355_birth_time, &now)/1000.0);
-                    print("Leaving Main Thread\n");
+                    flushed_print("\n\nLeave time : {:.3f} (s)\n\n", time_diff_ms(&adxl355.adxl355_birth_time, &now)/1000.0);
+                    flushed_print("Leaving Main Thread\n");
                     _running = 0;
                 }
             }
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
             double time_diff = time_diff_us(&start,&stop);
             double between_two_loop = time_diff_us(&last_t_loop, &t_loop);
             if(time_diff > 100) 
-                //print("loop cost (us): {:.3f} ; loop interval (us): {:.3f}\n", time_diff, between_two_loop);
+                //flushed_print("loop cost (us): {:.3f} ; loop interval (us): {:.3f}\n", time_diff, between_two_loop);
 
             // flag reset
             _loop_timer = false;

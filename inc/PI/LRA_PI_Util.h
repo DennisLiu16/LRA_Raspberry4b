@@ -31,6 +31,15 @@ namespace LRA_PI_Util{
     using namespace std;
 
     #define I2C_DEFAULT_DEVICE "/dev/i2c-1"
+
+    // a flush print fucntion 
+    // ref: https://github.com/fmtlib/fmt/issues/2134
+    template <typename... T>
+    void flushed_print(fmt::format_string<T...> fmt, T&&... args)
+    {
+        print(fmt, std::forward<T>(args)...);
+        fflush(stdout);
+    }
     
     class Data{
         public:
