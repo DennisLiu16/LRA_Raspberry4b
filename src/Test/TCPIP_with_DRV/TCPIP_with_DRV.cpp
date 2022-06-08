@@ -3,7 +3,6 @@
 #include <TCPIP/TCPIP.h>
 
 
-
 // for select
 #include <sys/select.h>
 
@@ -98,6 +97,15 @@ int main(int argc, char* argv[])
     // strcpy(ip,local_ip);
 
     wiringPiSetup();
+
+    //pwm
+    int buzzer_pin = 1; // Pin 1
+    pinMode(buzzer_pin, PWM_OUTPUT);
+    pwmSetMode(PWM_MODE_MS);
+    pwmSetRange(256);
+    pwmSetClock(100);   // 54M/255/100 ~ 2100Hz
+    pwmWrite(buzzer_pin, 0);
+
     DRV Xdrv(7,0);
     Xdrv.setStandBy(DRV::STANDBY_ready);   
     Xdrv.set6S();
@@ -120,9 +128,9 @@ int main(int argc, char* argv[])
     ADXL355 adxl355(init_para);
 
     // open fd
-    fdAcc = fopen("/home/ubuntu/LRA/Code/data/log/Acc.txt","wb");
-    fdRTP = fopen("/home/ubuntu/LRA/Code/data/log/RTP.txt","wb");
-    fdTCP = fopen("/home/ubuntu/LRA/Code/data/log/TCP.txt","wb");
+    fdAcc = fopen("/home/ubuntu/LRA_Raspberry4b/data/log/Acc.txt","wb");
+    fdRTP = fopen("/home/ubuntu/LRA_Raspberry4b/data/log/RTP.txt","wb");
+    fdTCP = fopen("/home/ubuntu/LRA_Raspberry4b/data/log/TCP.txt","wb");
 
     // select setting
     fd_set rfd;
@@ -187,6 +195,10 @@ int main(int argc, char* argv[])
                 );
                 cmd = (uint8_t)client->data.x;
                 Xdrv.setRTP(cmd);
+
+                // update pwm
+                pwmWrite(buzzer_pin, cmd);
+
                 flushed_print("time: {:.3f}(ms), new cmd: {}\n", time_diff_ms(&adxl355.adxl355_birth_time,&start) ,cmd);
             }
 
@@ -229,4 +241,5 @@ int main(int argc, char* argv[])
     //close
     Xdrv.setStandBy(DRV::STANDBY_standby);
     adxl355.StopMeasurement();
+    pwmWrite(buzzer_pin, 0);
 }
