@@ -14,7 +14,7 @@ FILE* fdAcc;
 FILE* fdRTP;
 
 static bool _running = true;
-bool _loop_timer = false;
+volatile bool _loop_timer = false;
 
 /*irq test 0*/
 void irq_test_0()
@@ -119,7 +119,7 @@ int main()
             
             // set RTP
             val++;
-
+            val = 255;
             Xdrv.setRTP(val);
             pwmWrite(buzzer_pin, val);
             

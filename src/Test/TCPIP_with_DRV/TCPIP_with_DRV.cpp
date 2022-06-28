@@ -25,7 +25,7 @@ FILE* fdTCP;
 
 // flow control var
 static bool _running = true;
-bool _loop_timer = false;
+volatile bool _loop_timer = false;
 
 // irq_func
 void irq_test_0()
@@ -99,12 +99,14 @@ int main(int argc, char* argv[])
     wiringPiSetup();
 
     //pwm
+    
     int buzzer_pin = 1; // Pin 1
     pinMode(buzzer_pin, PWM_OUTPUT);
     pwmSetMode(PWM_MODE_MS);
     pwmSetRange(256);
     pwmSetClock(100);   // 54M/255/100 ~ 2100Hz
     pwmWrite(buzzer_pin, 0);
+    
 
     DRV Xdrv(7,0);
     Xdrv.setStandBy(DRV::STANDBY_ready);   

@@ -12,7 +12,7 @@ FILE* fdAcc;
 FILE* fdRTP;
 
 static bool _running = true;
-bool _loop_timer = false;
+volatile bool _loop_timer = false; // This volatile is important in -O3 optimization
 
 /**/
 void timer_flag()
@@ -35,18 +35,25 @@ int main()
 {
     wiringPiSetup();
     //pwm
-    int buzzer_pin = 1; // Pin 1
-    pinMode(buzzer_pin, PWM_OUTPUT);
-    pwmSetMode(PWM_MODE_MS);
-    pwmSetRange(256);
-    pwmSetClock(95);   // 54M/255/100 ~ 2100Hz
-    pwmWrite(buzzer_pin, 0);
+    // int buzzer_pin = 1; // Pin 1
+    // pinMode(buzzer_pin, PWM_OUTPUT);
+    // pwmSetMode(PWM_MODE_MS);
+    // pwmSetRange(256);
+    // pwmSetClock(95);   // 54M/255/100 ~ 2100Hz
+    // pwmWrite(buzzer_pin, 0);
 
     DRV2605L_TCA Xdrv(7, 0);
-    Xdrv.setStandBy(DRV::STANDBY_ready);   
+    Xdrv.reset();
+    sleep(2); // wait for calibration
+    Xdrv.printAllRegIndex();
+    Xdrv.setStandBy(DRV::STANDBY_ready);
+    Xdrv.setAutoCalibration();
+    sleep(5); // wait for calibration
+    Xdrv.getCalibrationResult();
+    // Xdrv.printAllRegIndex();
     Xdrv.set6S();
     Xdrv.printAllRegIndex();
-
+    Xdrv.setGo(true);
     // write to fd var
     fdRTP = fopen("/home/ubuntu/LRA_Raspberry4b/data/log/RTP.txt","wb");
 
@@ -66,7 +73,7 @@ int main()
     Timer myTimer = Timer();
 
     myTimer.setInterval(timer_flag,9920u);
-    
+    flushed_print("Before loop \n");
     while(_running)
     {
         
@@ -81,7 +88,7 @@ int main()
             val++;
             
             Xdrv.setRTP(val);
-            pwmWrite(buzzer_pin, val);
+            // pwmWrite(buzzer_pin, val); //disable pwn
             
             timespec t_tmp; 
             clock_gettime(CLOCK_REALTIME, &t_tmp);
@@ -125,5 +132,5 @@ int main()
     }
     //close
     Xdrv.setStandBy(DRV::STANDBY_standby);
-    pwmWrite(buzzer_pin, 0);
+    // pwmWrite(buzzer_pin, 0);
 }
