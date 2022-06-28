@@ -7,10 +7,10 @@
                 "${workspaceFolder}/inc"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "gnu17",
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-arm64",
+            "intelliSenseMode": "linux-clang-arm64",
             "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
