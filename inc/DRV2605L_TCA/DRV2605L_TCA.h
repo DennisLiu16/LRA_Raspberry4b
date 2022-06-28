@@ -926,6 +926,10 @@ namespace LRA_DRV2605L_TCA
         // LRA project setting
         void set6S();
 
+        void setAutoCalibration();
+
+        void getCalibrationResult();
+
         protected:
         ////////////////
         /*Const region*/

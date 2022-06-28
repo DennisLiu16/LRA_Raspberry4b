@@ -953,6 +953,70 @@ DRV::set6S()
     flushed_print("set 6S done \n");
 }
 
+void 
+DRV::setAutoCalibration() {
+    /*TCA check*/
+    TCA_selectSingleChannel(_channel);
+
+    /*Mode*/
+    setBitPair(MODE, MODE_auto_calibration);
+
+    /*Brake Factor*/
+    setBitPair(FB_BRAKE_FACTOR, FB_BRAKE_FACTOR_4x);
+
+    /*Loop Gain*/
+    setBitPair(LOOP_GAIN, LOOP_GAIN_medium);
+
+    /*Rated Voltage and control type*/
+    setBitPair(N_ERM_LRA, N_ERM_LRA_lra);
+    setBitPair(LRA_OPEN_LOOP, LRA_OPEN_LOOP_auto); // to open
+    setBitPair(LRA_AUTO_OPEN_LOOP, LRA_AUTO_OPEN_LOOP_auto);
+    setBitPair(RATED_VOLTAGE, 200);
+
+    /*OD Clamp*/
+    setBitPair(OD_CLAMP, 255);
+
+    /*Auto CAL Time*/
+    setBitPair(AUTO_CAL_TIME, AUTO_CAL_TIME_1000To1200ms);
+
+    /*Drive Time*/
+    setBitPair(DRIVE_TIME, 0x13); // default
+
+    /*Sample Time*/
+    setBitPair(SAMPLE_TIME, SAMPLE_TIME_150us);
+
+    /*Blanking Time*/
+    setBitPair(BLANKING_TIME0, BLANKING_TIME0_lra_105us);
+    setBitPair(BLANKING_TIME1, BLANKING_TIME1_lra_105us);
+
+    /*Idiss Time*/
+    setBitPair(IDISS_TIME0, IDISS_TIME0_lra_105us);
+    setBitPair(IDISS_TIME1, IDISS_TIME1_lra_105us);
+
+    /*ZC DET Time*/
+    setBitPair(ZC_DET_TIME, ZC_DET_TIME_100us); // default
+
+    /*start*/
+    setGo(true);
+
+    flushed_print("set autocalibration done \n");
+}
+
+void 
+DRV::getCalibrationResult() {
+    int ret = getBitPair(DIAG_RESULT);
+    flushed_print("ret: {}\n", ret);
+    if(ret > 0) { // ret == 1
+        flushed_print("calibration failed\n");
+    }else {
+        int a_cal_bemf = getBitPair(A_CAL_BEMF);
+        double bemf_gain = getBEMFgain();
+        flushed_print("auto backemf: {:.3f}\n", a_cal_bemf*1.22/255/bemf_gain);
+        flushed_print("operation period: {:.3f}\n", getOperationFreq());
+    }
+
+}
+
 /////////////
 /*protected*/
 /////////////
